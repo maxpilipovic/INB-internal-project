@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 //Custom css import
 import './App.css';
+import ChatLayout from './chatLayout';
 
 function App() {
 
@@ -52,25 +53,12 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <h1>INB, N.A Support Chat Bot</h1>
-      <div className="chat-box">
-        {chat.map((msg, i) => (
-          <div key={i} className={`chat-message ${msg.sender}`}>
-            <strong>{msg.sender === 'user' ? 'You' : 'Bot'}:</strong> {msg.text}
-          </div>
-        ))}
-      </div>
-      <div className="input-section">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && sendMessage()}
-          placeholder="Ask your IT question..."
-        />
-        <button onClick={sendMessage}>Send</button>
-      </div>
-    </div>
+    <ChatLayout
+      chat={chat}
+      input={input}
+      setInput={setInput}
+      sendMessage={sendMessage}
+    />  
   );
 }
 
