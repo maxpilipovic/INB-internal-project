@@ -1,99 +1,91 @@
+/* SIMPLE UI FRONTEND FOR CHATBOT */
+
 .chat-container {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background: #fff;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.1); /* Provides shadow */
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /*Font family for entire page*/
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.1); /*Provides shadow (NO SHADOW RN BECAUSE FLEX-GROW ENTIRE PAGE*/
+  display: flex; /*Flexbox for entire page*/
+  flex-direction: column; /*Column for entire page*/
+  height: 100vh; /*Height of entire page*/
+  width: 100vw; /*Width of entire page*/
 }
- 
+
+
 .chat-container h1 {
-  font-weight: 700;
-  font-size: 1.5rem;
-  padding: 20px;
-  border-bottom: 1p solid #eee;
-  color: #111;
+  font-weight: 700; /*Font weight for header*/
+  font-size: 1.5rem; /*Font size for header (1.5rem from root)*/
+  padding: 20px; /*Padding for header*/
+  color: #111; /*Black Color for header text*/
 }
 
 .chat-box {
-  flex-grow: 1;
-  padding: 20px;
-  overflow-y: auto;
-  background: #fafafa;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  scrollbar-width: thin;
+  flex-grow: 1; /*Grows entire page*/
+  padding: 20px; /*Padding all round for chat box*/
+  overflow-y: auto; /*Allocated for future scrolling for chatbox*/
+  background: #fafafa; /*Background color white*/
+  display: flex; /*Flexbox for chat messages*/
+  flex-direction: column; /*Column for chat messages*/
+  gap: 12px; /*Gap between each message*/
+
+  /*Future scrolling styles*/
+
+  /*
+  scrollbar-width: thin; 
   scrollbar-color: #ccc transparent;
+  */
 }
 
 /* Chat messages */
 .chat-message {
-  max-width: 75%;
-  padding: 14px 20px;
-  border-radius: 16px;
-  font-size: 1rem;
-  line-height: 1.4;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+  max-width: 75%; /*Max width for each message, then jumps down line*/
+  padding: 14px 20px; /*Padding for messages*/
+  border-radius: 16px; /*Rounded corners for messages*/
+  font-size: 1rem; /*Font size (1rem from root)*/
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); /* Adds box shadow around messages*/
 }
 
-/* User messages aligned right */
+/*Client messages...*/
 .user {
-  background: #007bff;
-  color: white;
-  align-self: flex-end;
-  border-bottom-right-radius: 4px;
+  background: #007bff; /*Text bubble blue*/
+  color: white; /*Text color white*/
+  align-self: flex-end; /*Aligns to the right*/
 }
 
-/* Bot messages aligned left */
+/*Chatbot messages...*/
 .bot {
-  background: #e5e5ea;
-  color: #111;
-  align-self: flex-start;
-  border-bottom-left-radius: 4px;
+  background: #e5e5ea; /*Text bubble light grey*/
+  color: #111; /*Text color black*/
+  align-self: flex-start; /*Aligns to the left*/
 }
 
-/* Input area */
+/*Input area for text*/
 .input-area {
-  display: flex;
-  padding: 16px 20px;
-  border-top: 1px solid #eee;
-  background: white;
+  display: flex; /*Flexbox for input area*/
+  padding: 16px 20px; /*Padding for input area*/
+  border-top: 1px solid #eee; /*Top border for input area*/
+  background: white; /*Background color white*/
 }
 
-/* Input field */
+/*Input field*/
 input[type="text"] {
-  flex-grow: 1;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-size: 1rem;
-  outline-offset: 2px;
-  transition: border-color 0.2s ease;
-}
-
-input[type="text"]:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgb(0 123 255 / 0.25);
+  flex-grow: 1; /*Takes up remaining spae*/
+  border-radius: 12px; /*Rounded corners*/
+  padding: 12px 16px; /* Padding for input field*/
+  font-size: 1rem; /*Font size (1rem from root)*/
 }
 
 /* Send button */
 button {
-  margin-left: 12px;
-  background: #007bff;
-  border: none;
-  color: white;
-  padding: 0 20px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  margin-left: 12px; /*Margin left for button*/
+  background: #007bff; /*Background color blue*/
+  color: white; /*Color white*/
+  border-radius: 12px; /*Rounded*/
+  font-weight: 600; /*Changes font weight of button*/
+  cursor: pointer; /*Changes cursor for hover over button*/
+  transition: background-color 0.2s ease; /*Transition hover effect*/
 }
 
 button:hover {
-  background: #0056b3;
+  background: #0056b3; /*Background color blue for HOVER EFFECT*/
 }
 
