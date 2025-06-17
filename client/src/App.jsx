@@ -66,7 +66,10 @@ function App() {
     const res = await fetch('http://localhost:5000/api/chat/confirm-ticket', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: responseText, ticketContext: ticketContext}),
+      body: JSON.stringify({
+        message: responseText,
+        ticketContext: ticketContext, // <-- send original issue here
+      }),
     });
 
     const data = await res.json();

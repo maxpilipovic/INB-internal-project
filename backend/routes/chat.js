@@ -61,41 +61,39 @@ router.post('/chat', async (req, res) => {
 });
 
 router.post('/chat/confirm-ticket', async (req, res) => {
-  const { message: userReply, ticketContext } = req.body;
+  const userConfirmation = req.body.message;
+  const ticketContext = req.body.ticketContext || 'User did not provide issue context.';
 
-const confirmResponse = await openai.chat.completions.create({
-  model: 'gpt-4o',
-  messages: [
-    {
-      role: 'system',
-      content: 'You are a help desk assistant. Based on the following user reply, respond with ONLY "yes" or "no" to determine if the user agreed to submit a help desk ticket.',
-    },
-    {
-      role: 'user',
-      content: userReply,
-    },
-  ],
-});
+  const intentResponse = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    messages: [
+      {
+        role: 'system',
+        content: 'The user was just asked if they want to submit a ticket. Determine if their response is a yes.',
+      },
+      { role: 'user', content: userConfirmation },
+    ],
+  });
 
-const confirmation = confirmResponse.choices?.[0]?.message?.content?.toLowerCase().trim();
+  const intent = intentResponse.choices?.[0]?.message?.content?.toLowerCase();
 
-if (confirmation === 'yes') {
-  try {
-    await submitFreshServiceTicket(ticketContext); // Ticket is created based on original issue
-    const botReply = '✅ Your help desk ticket has been submitted successfully.';
-    await logChat(ticketContext, botReply);
-    return res.json({ reply: botReply });
-  } catch (error) {
-    console.error('Error submitting ticket:', error);
-    const botReply = 'There was an issue submitting your ticket.';
-    await logChat(ticketContext, botReply);
-    return res.json({ reply: botReply });
+  if (intent.includes('yes') || intent.includes('sure') || intent.includes('please') || intent.includes('yeah')) {
+    try {
+      await submitFreshServiceTicket(ticketContext); // <-- use original issue here
+      const botReply = '✅ Your help desk ticket has been submitted successfully.';
+      await logChat(userConfirmation, botReply);
+      return res.json({ reply: botReply });
+    } catch (error) {
+      console.error('Error submitting ticket:', error);
+      const botReply = 'Sorry, there was an issue submitting your ticket.';
+      await logChat(userConfirmation, botReply);
+      return res.json({ reply: botReply });
+    }
   }
-}
 
-const botReply = 'Okay, no ticket has been created.';
-await logChat(userReply, botReply);
-res.json({ reply: botReply });
+  const botReply = 'Okay, no ticket has been created. Let me know if you need anything else.';
+  await logChat(userConfirmation, botReply);
+  return res.json({ reply: botReply });
 });
 
 export default router;
