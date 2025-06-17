@@ -7,12 +7,21 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import axios from 'axios';
+import admin from 'firebase-admin';
+import serviceAccount from './serviceAccountKey.json' assert { type: 'json' };
 
 //Port
 const PORT = 5000;
 
 //Load environment variables
 dotenv.config();
+
+//Initialize Firebase Admin SDK
+adnmin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),  
+});
+
+const db = admin.firestore();
 
 //Create app
 const app = express();
@@ -43,7 +52,7 @@ async function fetchFreshServiceArticles(searchTerm) {
     );
 
     //Extract titles & description.text
-    const results = response.data.articles.map(article => ({
+    const results = response.data.articles.slice(0, 5).map(article => ({
       title: article.title || 'No Title',
       content: article.description_text ? article.description_text.trim() : 'No description available',
     }));
