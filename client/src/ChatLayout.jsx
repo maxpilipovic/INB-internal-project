@@ -1,6 +1,6 @@
 import React from 'react';
 
-function ChatLayout({chat, input, setInput, sendMessage}) {
+function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmation}) {
   return (
     <div className="chat-container">
       <h1>INB, N.A IT Support Chatbot</h1>
@@ -8,6 +8,13 @@ function ChatLayout({chat, input, setInput, sendMessage}) {
         {chat.map((msg, i) => (
           <div key={i} className={`chat-message ${msg.sender}`}>
             <strong>{msg.sender === 'user' ? 'You' : 'Bot'}:</strong> {msg.text}
+
+            {msg.showConfirmButtons && (
+              <div className="confirmation-buttons">
+                <button onClick={() => handleTicketConfirmation('Yes')}>Yes, create a ticket</button>
+                <button onClick={() => handleTicketConfirmation('No')}>No thanks</button>
+              </div>
+            )}
           </div>
         ))}
       </div>

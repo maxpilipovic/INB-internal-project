@@ -15,6 +15,8 @@ function App() {
   //setChat: function to update chat state
   const [chat, setChat] = useState([]);
 
+  const[ticketContext, setTicketContext] = useState('');
+
   //Function to send message
   const sendMessage = async () => {
 
@@ -39,8 +41,12 @@ function App() {
       const data = await res.json();
 
       //Create bot message object and update chat state
-      const botMsg = { sender: 'bot', text: data.reply };
+      const botMsg = { sender: 'bot', text: data.reply, showConfirmButtons: data.awaitingTicketConfirmation || false };
       setChat(prev => [...prev, botMsg]);
+
+      if (data.awaitingTicketConfirmation) {
+        setTicketContext(input); // Store the context for ticket confirmation
+      }
 
       //Clear input field after sending message
       setInput('');
@@ -52,12 +58,33 @@ function App() {
     }
   };
 
+  const handleTicketConfirmation = async (responseText) => {
+  const userMsg = { sender: 'user', text: responseText };
+  setChat(prev => [...prev, userMsg]);
+
+  try {
+    const res = await fetch('http://localhost:5000/api/chat/confirm-ticket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: responseText, ticketContext: ticketContext}),
+    });
+
+    const data = await res.json();
+    const botMsg = { sender: 'bot', text: data.reply };
+    setChat(prev => [...prev, botMsg]);
+  } catch (error) {
+    const errorMsg = { sender: 'bot', text: 'Sorry, something went wrong submitting your ticket.' };
+    setChat(prev => [...prev, errorMsg]);
+  }
+};
+
   return (
     <ChatLayout
       chat={chat}
       input={input}
       setInput={setInput}
       sendMessage={sendMessage}
+      handleTicketConfirmation={handleTicketConfirmation}
     />  
   );
 }
