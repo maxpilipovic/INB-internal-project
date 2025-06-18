@@ -36,7 +36,7 @@ function App() {
       const res = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input }) //Send input as json
+        body: JSON.stringify({ message: input, uid: user.uid }) //Send input as json
       });
 
       //Convert response to JSON
@@ -71,6 +71,7 @@ function App() {
       body: JSON.stringify({
         message: responseText,
         ticketContext: ticketContext, // <-- send original issue here
+        uid: user.uid
       }),
     });
 

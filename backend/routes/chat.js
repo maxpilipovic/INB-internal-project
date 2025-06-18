@@ -7,7 +7,8 @@ import { submitFreshServiceTicket } from '../services/freshServiceTicket.js';
 const router = express.Router();
 
 router.post('/chat', async (req, res) => {
-  const userMessage = req.body.message;
+  //const userMessage = req.body.message;
+  const { message: userMessage, uid } = req.body;
 
   //1.Try to search knowledge base
   const kbArticles = await fetchFreshServiceArticles(userMessage);
@@ -34,7 +35,7 @@ router.post('/chat', async (req, res) => {
     const botReply = completion.choices?.[0]?.message?.content?.trim();
 
     //3.Log the response
-    await logChat(userMessage, botReply);
+    await logChat(uid, userMessage, botReply);
 
     const wantsTicket = /submit.*ticket|create.*ticket|help desk ticket|i need.*help/i.test(userMessage) || 
                     /should I create.*ticket|would you like.*ticket|I couldn’t find a good answer/i.test(botReply);
@@ -61,8 +62,9 @@ router.post('/chat', async (req, res) => {
 });
 
 router.post('/chat/confirm-ticket', async (req, res) => {
-  const userConfirmation = req.body.message;
-  const ticketContext = req.body.ticketContext || 'User did not provide issue context.';
+  //const userConfirmation = req.body.message;
+  //const ticketContext = req.body.ticketContext || 'User did not provide issue context.';
+  const { message: userConfirmation, ticketContext = 'User did not provide issue context.', uid } = req.body;
 
   const intentResponse = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -81,18 +83,18 @@ router.post('/chat/confirm-ticket', async (req, res) => {
     try {
       await submitFreshServiceTicket(ticketContext); // <-- use original issue here
       const botReply = '✅ Your help desk ticket has been submitted successfully.';
-      await logChat(userConfirmation, botReply);
+      await logChat(uid, userConfirmation, botReply);
       return res.json({ reply: botReply });
     } catch (error) {
       console.error('Error submitting ticket:', error);
       const botReply = 'Sorry, there was an issue submitting your ticket.';
-      await logChat(userConfirmation, botReply);
+      await logChat(uid, userConfirmation, botReply);
       return res.json({ reply: botReply });
     }
   }
 
   const botReply = 'Okay, no ticket has been created. Let me know if you need anything else.';
-  await logChat(userConfirmation, botReply);
+  await logChat(uid, userConfirmation, botReply);
   return res.json({ reply: botReply });
 });
 
