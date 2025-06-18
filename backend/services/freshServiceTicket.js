@@ -1,7 +1,10 @@
 import axios from 'axios';
 import openai from '../config/openai.js';
+import { db } from '../config/firebase.js';
+import fetch from 'node-fetch';
 
 async function generateTicketDetails(userMessage) {
+
      const systemPrompt = `
 You are an AI assistant helping an IT support team. 
 Given a user's message, generate a JSON object with the following fields:
@@ -41,19 +44,27 @@ Return only the JSON. Example:
   }
 }
 
-export async function submitFreshServiceTicket(userMessage) {
-  const ticketDetails = await generateTicketDetails(userMessage);
-
-  const payload = {
-    description: ticketDetails.description,
-    subject: ticketDetails.subject,
-    email: 'placeholder@company.com', // Replace with actual if needed
-    priority: ticketDetails.priority,
-    status: 2,
-    workspace_id: 2,
-  };
-
+export async function submitFreshServiceTicket(userMessage, uid) {
   try {
+    //Lookup user email from Firestore
+    const userDoc = await db.collection('users').doc(uid).get();
+    if (!userDoc.exists) throw new Error('User not found in Firestore');
+    const userEmail = userDoc.data().email;
+
+    //Generate details with GPT
+    const ticketDetails = await generateTicketDetails(userMessage);
+
+    //Construct the payload
+    const payload = {
+      description: ticketDetails.description,
+      subject: ticketDetails.subject,
+      email: userEmail, //REAL EMAIL
+      priority: ticketDetails.priority,
+      status: 2,
+      workspace_id: 2,
+    };
+
+    //Submit to FreshService
     const response = await axios.post(
       'https://inbhelpdesk.freshservice.com/api/v2/tickets',
       payload,
@@ -68,10 +79,11 @@ export async function submitFreshServiceTicket(userMessage) {
       }
     );
 
-    console.log('Ticket submitted:', response.data);
+    console.log('✅ Ticket submitted:', response.data);
     return response.data;
+
   } catch (error) {
-    console.error('Failed to submit FreshService ticket:', error.response?.data || error.message);
+    console.error('❌ Failed to submit FreshService ticket:', error.response?.data || error.message);
     throw error;
   }
 }

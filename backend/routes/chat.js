@@ -87,7 +87,7 @@ router.post('/chat/confirm-ticket', async (req, res) => {
   if (intent.includes('yes') || intent.includes('sure') || intent.includes('please') || intent.includes('yeah')) {
     try {
       //CALS FRESH SERVICE API TO SUBMIT TICKET
-      await submitFreshServiceTicket(ticketContext); // <-- use original issue here
+      await submitFreshServiceTicket(ticketContext, uid); // <-- use original issue here
       const botReply = '✅ Your help desk ticket has been submitted successfully.';
       await logChat(uid, userConfirmation, botReply);
       return res.json({ reply: botReply });
