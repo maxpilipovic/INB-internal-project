@@ -4,9 +4,11 @@ import { useState } from 'react';
 //Custom css import
 import './App.css';
 import ChatLayout from './chatLayout';
+import Login from './Login';
 
 function App() {
 
+  const [user, setUser] = useState(null);
   //Input: currrent user input
   //setInput: function to update input state
   const [input, setInput] = useState('');
@@ -81,14 +83,17 @@ function App() {
   }
 };
 
-  return (
+  return user ? (
     <ChatLayout
       chat={chat}
       input={input}
       setInput={setInput}
       sendMessage={sendMessage}
       handleTicketConfirmation={handleTicketConfirmation}
-    />  
+      user={user} // Pass user to ChatLayout
+    />
+  ) : (
+    <Login onLogin={setUser} />
   );
 }
 
