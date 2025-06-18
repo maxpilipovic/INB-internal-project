@@ -7,7 +7,8 @@ import { submitFreshServiceTicket } from '../services/freshServiceTicket.js';
 const router = express.Router();
 
 router.post('/chat', async (req, res) => {
-  //const userMessage = req.body.message;
+  //Grabs stuff from frontend
+  //const { message: userMessage } = req.body;
   const { message: userMessage, uid } = req.body;
 
   //1.Try to search knowledge base
@@ -26,6 +27,8 @@ router.post('/chat', async (req, res) => {
     },
   ];
 
+  //SENDS TO OPENAI API
+  //This is where the magic happens
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -37,6 +40,8 @@ router.post('/chat', async (req, res) => {
     //3.Log the response
     await logChat(uid, userMessage, botReply);
 
+    //4.Check if user wants to create a ticket
+    //This regex checks if the user message or bot reply indicates a desire to create a ticket
     const wantsTicket = /submit.*ticket|create.*ticket|help desk ticket|i need.*help/i.test(userMessage) || 
                     /should I create.*ticket|would you like.*ticket|I couldn’t find a good answer/i.test(botReply);
 
@@ -45,7 +50,7 @@ router.post('/chat', async (req, res) => {
     if (wantsTicket) {
       return res.json({ 
         reply: botReply, 
-        awaitingTicketConfirmation: true, 
+        awaitingTicketConfirmation: true, //FLAG SENT TO FRONTEND TO SHOW CONFIRMATION BUTTONS
         ticketContext: userMessage, 
     });
     }
@@ -64,7 +69,7 @@ router.post('/chat', async (req, res) => {
 router.post('/chat/confirm-ticket', async (req, res) => {
   //const userConfirmation = req.body.message;
   //const ticketContext = req.body.ticketContext || 'User did not provide issue context.';
-  const { message: userConfirmation, ticketContext = 'User did not provide issue context.', uid } = req.body;
+  const { message: userConfirmation, ticketContext = req.body.ticketContext || 'User did not provide issue context.', uid } = req.body;
 
   const intentResponse = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -81,6 +86,7 @@ router.post('/chat/confirm-ticket', async (req, res) => {
 
   if (intent.includes('yes') || intent.includes('sure') || intent.includes('please') || intent.includes('yeah')) {
     try {
+      //CALS FRESH SERVICE API TO SUBMIT TICKET
       await submitFreshServiceTicket(ticketContext); // <-- use original issue here
       const botReply = '✅ Your help desk ticket has been submitted successfully.';
       await logChat(uid, userConfirmation, botReply);

@@ -23,7 +23,7 @@ Return only the JSON. Example:
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userMessage },
     ],
-    temperature: 0.4,
+    temperature: 0.4, //DONT KNOW WHAT TEMP IS? OPENAI SUGGESTED
   });
 
   const json = completion.choices?.[0]?.message?.content;

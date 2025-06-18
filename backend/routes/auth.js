@@ -3,6 +3,9 @@ import { db, admin } from '../config/firebase.js';
 
 const router = express.Router();
 
+//Route to handle user authentication and storage
+// Expects { uid: string, email: string } in request body
+
 router.post('/', async (req, res) => {
   const { uid, email } = req.body;
 

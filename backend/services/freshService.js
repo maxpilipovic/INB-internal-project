@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// This function fetches articles from FreshService based on a search term
 export async function fetchFreshServiceArticles(searchTerm) {
   try {
     const response = await axios.get(

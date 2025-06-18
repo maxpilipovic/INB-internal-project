@@ -2,9 +2,9 @@
 import { useState } from 'react';
 
 //Custom css import
-import './App.css';
-import ChatLayout from './chatLayout';
-import Login from './Login';
+import './styles/App.css';
+import ChatLayout from './components/Chat/ChatLayout';
+import LoginForm from './components/Auth/LoginForm';
 
 function App() {
 
@@ -94,7 +94,7 @@ function App() {
       user={user} // Pass user to ChatLayout
     />
   ) : (
-    <Login onLogin={setUser} />
+    <LoginForm onLogin={setUser} />
   );
 }
 
