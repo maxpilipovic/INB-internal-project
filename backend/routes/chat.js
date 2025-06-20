@@ -5,6 +5,7 @@ import { logChat } from '../services/firestore.js';
 import { submitFreshServiceTicket } from '../services/freshServiceTicket.js';
 import { listFreshServiceTicketsByEmail } from '../services/freshServiceListAllTickets.js';
 import { getFreshServiceTicketById } from '../services/freshServiceListSpecificTicket.js';
+import { getTicketConversations } from '../services/freshServiceListTicketConversations.js';
 import { db } from '../config/firebase.js';
 
 const router = express.Router();
@@ -13,6 +14,42 @@ router.post('/chat', async (req, res) => {
   //Grabs stuff from frontend
   //const { message: userMessage } = req.body;
   const { message: userMessage, uid } = req.body;
+
+
+
+  //Check if user is asking for ticket activity
+  const activityMatch = userMessage.match(/(?:conversations?|updates?|history|activity).*ticket\s*#?(\d{3,})/i);
+
+  if (activityMatch) {
+    const ticketId = activityMatch[1];
+
+    try {
+      const conversations = await getTicketConversations(ticketId);
+      console.log(conversations);
+
+      if (!conversations.length) {
+        const reply = `There are no conversations on ticket #${ticketId} yet.`;
+        await logChat(uid, userMessage, reply);
+        return res.json({ reply });
+      }
+
+      const formatted = conversations.slice(-5).map(conv => {
+        const from = conv.user_id ? `Agent/User ${conv.user_id}` : 'System';
+        const body = conv.body_text?.slice(0, 120)?.replace(/\n/g, ' ') || '(No text)';
+        return `- ${from}: "${body}..."`;
+
+      }).join('\n');
+
+      const reply = `📜 Recent conversations on ticket #${ticketId}:\n\n${formatted}`;
+      await logChat(uid, userMessage, reply);
+      return res.json({ reply });
+
+    } catch (err) {
+      const reply = `Sorry, I couldn't fetch conversations for ticket #${ticketId}.`;
+      await logChat(uid, userMessage, reply);
+      return res.json({ reply });
+    }
+  }
 
   //Check if user is asking for a specific ticket
   const ticketIdMatch = userMessage.match(/(?:ticket\s*#?|#)(\d{3,})/i);
