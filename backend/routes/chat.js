@@ -3,7 +3,8 @@ import openai from '../config/openai.js';
 import { fetchFreshServiceArticles } from '../services/freshService.js';
 import { logChat } from '../services/firestore.js';
 import { submitFreshServiceTicket } from '../services/freshServiceTicket.js';
-import { listFreshServiceTicketsByEmail } from '../services/freshServiceTicket.js';
+import { listFreshServiceTicketsByEmail } from '../services/freshServiceListAllTickets.js';
+import { getFreshServiceTicketById } from '../services/freshServiceListSpecificTicket.js';
 import { db } from '../config/firebase.js';
 
 const router = express.Router();
@@ -13,7 +14,40 @@ router.post('/chat', async (req, res) => {
   //const { message: userMessage } = req.body;
   const { message: userMessage, uid } = req.body;
 
-  //Check if user is asking for tickets?
+  //Check if user is asking for a specific ticket
+  const ticketIdMatch = userMessage.match(/(?:ticket\s*#?|#)(\d{3,})/i);
+
+  if (ticketIdMatch) {
+    const ticketId = ticketIdMatch[1];
+
+    try {
+      const ticket = await getFreshServiceTicketById(ticketId);
+      console.log('Fetched ticket:', ticket);
+
+      const statusMap = {
+        2: 'Open',
+        3: 'Pending',
+        4: 'Resolved',
+        5: 'Closed',
+        6: 'Waiting on customer',
+        7: 'Waiting on third party',
+      };
+
+      const reply = `📝 Ticket #${ticket.id} - *${ticket.subject}* is currently **${statusMap[ticket.status] || 'Unknown'}**.`;
+
+      await logChat(uid, userMessage, reply);
+      return res.json({ reply });
+
+    } catch (error) {
+      console.error('Error checking specific ticket:', error);
+      const reply = `Sorry, I couldn't retrieve info for ticket #${ticketId}.`;
+      await logChat(uid, userMessage, reply);
+      return res.json({ reply });
+      }
+  }
+
+
+  //Check if user is asking for LIST tickets?
   if (/list.*tickets|show.*tickets|my.*tickets|view.*tickets|status.*ticket|update.*ticket|how.*ticket.*doing|check.*ticket/i.test(userMessage)) {
     try {
 
