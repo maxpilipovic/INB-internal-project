@@ -3,6 +3,8 @@ import openai from '../config/openai.js';
 import { fetchFreshServiceArticles } from '../services/freshService.js';
 import { logChat } from '../services/firestore.js';
 import { submitFreshServiceTicket } from '../services/freshServiceTicket.js';
+import { listFreshServiceTicketsByEmail } from '../services/freshServiceTicket.js';
+import { db } from '../config/firebase.js';
 
 const router = express.Router();
 
@@ -10,6 +12,42 @@ router.post('/chat', async (req, res) => {
   //Grabs stuff from frontend
   //const { message: userMessage } = req.body;
   const { message: userMessage, uid } = req.body;
+
+  //Check if user is asking for tickets?
+  if (/list.*tickets|show.*tickets|my.*tickets|view.*tickets|status.*ticket|update.*ticket|how.*ticket.*doing|check.*ticket/i.test(userMessage)) {
+    try {
+
+      //Get from db
+      const userDoc = await db.collection('users').doc(uid).get();
+      if (!userDoc.exists) throw new Error('User not found in db');
+
+      const userData = userDoc.data();
+      const tickets = await listFreshServiceTicketsByEmail(userData.email);
+
+      if (!tickets.length) {
+        return res.json({ reply: 'You have no open tickets at the moment!' });
+      }
+      
+      //Hashy for replies
+      const statusMap = {
+        2: 'Open',
+        3: 'Pending',
+        4: 'Resolved',
+        5: 'Closed',
+        6: 'Waiting on customer',
+        7: 'Waiting on third party',
+      };
+
+      const formatted = tickets.slice(0, 5).map((t) => `#${t.id} - ${t.subject} [${statusMap[t.status] || 'Unknown'}]`).join('\n');
+
+      const reply = `Here are your open tickets:\n\n${formatted}\n\nYou can ask me to create a new ticket if you need help with something else.`;
+      await logChat(uid, userMessage, reply);
+      return res.json({ reply})
+    } catch (error) {
+      console.error('Error fetching tickets:', error);
+      return res.json({ reply: 'Sorry, I could not fetch your tickets at this time.' });
+    }
+  }
 
   //1.Try to search knowledge base
   const kbArticles = await fetchFreshServiceArticles(userMessage);
