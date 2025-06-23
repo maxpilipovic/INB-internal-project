@@ -2,6 +2,13 @@ import React from 'react';
 import MessageBubble from './MessageBubble';
 
 function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmation}) {
+
+  const [files, setFiles] = React.useState([]);
+
+  const handleFileChange = (e) => {
+    setFiles(Array.from(e.target.files));
+  };
+
   return (
     <div className="chat-container">
       <h1>INB, N.A IT Support Chatbot</h1>
@@ -12,7 +19,7 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
             sender={msg.sender}
             text={msg.text}
             showConfirmButtons={msg.showConfirmButtons}
-            onConfirm={handleTicketConfirmation}
+            onConfirm={(text) => handleTicketConfirmation(text, files)} //Pass file now
           />
         ))}
       </div>
@@ -23,6 +30,17 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
           onChange={(e) => setInput(e.target.value)}
           placeholder="Type your message..."
         />
+        <input
+          type="file"
+          multiple
+          onChange={handleFileChange}
+          style={{ marginTop: '10px' }}
+        />
+        <div>
+          {files.map((file, index) => (
+            <p key={index} style={{ fontSize: '12px' }}>{file.name}</p>
+          ))}
+        </div>
         <button onClick={sendMessage}>Send</button>
       </div>
     </div>

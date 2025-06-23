@@ -1,88 +1,71 @@
-//useState hook to manage state
 import { useState } from 'react';
-
-//Custom css import
 import './styles/App.css';
 import ChatLayout from './components/Chat/ChatLayout';
 import LoginForm from './components/Auth/LoginForm';
 
 function App() {
-
   const [user, setUser] = useState(null);
-  //Input: currrent user input
-  //setInput: function to update input state
   const [input, setInput] = useState('');
-
-  //Chat: array to hold chat messages
-  //setChat: function to update chat state
   const [chat, setChat] = useState([]);
 
-  const[ticketContext, setTicketContext] = useState('');
-
-  //Function to send message
   const sendMessage = async () => {
-
-    //Check if input is empty
     if (!input.trim()) return;
 
-    //Create user message object and update chat state
     const userMsg = { sender: 'user', text: input };
-
-    //Update chat state with user message
     setChat(prev => [...prev, userMsg]);
-    
-    //Post request to backend API
+
     try {
       const res = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, uid: user.uid }) //Send input as json
+        body: JSON.stringify({ message: input, uid: user.uid })
       });
 
-      //Convert response to JSON
       const data = await res.json();
-
-      //Create bot message object and update chat state
-      const botMsg = { sender: 'bot', text: data.reply, showConfirmButtons: data.awaitingTicketConfirmation || false };
+      const botMsg = {
+        sender: 'bot',
+        text: data.reply,
+        showConfirmButtons: data.awaitingTicketConfirmation || false
+      };
       setChat(prev => [...prev, botMsg]);
 
-      if (data.awaitingTicketConfirmation) {
-        setTicketContext(input); // Store the context for ticket confirmation
-      }
-
-      //Clear input field after sending message
       setInput('');
-      
-      //Error catching
     } catch (error) {
       const errorMsg = { sender: 'bot', text: 'Sorry, something went wrong.' };
       setChat(prev => [...prev, errorMsg]);
     }
   };
 
-  const handleTicketConfirmation = async (responseText) => {
-  const userMsg = { sender: 'user', text: responseText };
-  setChat(prev => [...prev, userMsg]);
+  const handleTicketConfirmation = async (responseText, files = []) => {
+    const userMsg = { sender: 'user', text: responseText };
+    setChat(prev => [...prev, userMsg]);
 
-  try {
-    const res = await fetch('http://localhost:5000/api/chat/confirm-ticket', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: responseText,
-        ticketContext: ticketContext, // <-- send original issue here
-        uid: user.uid
-      }),
-    });
+    try {
+      const formData = new FormData();
+      formData.append('message', responseText);
+      formData.append('chatHistory', JSON.stringify(chat.map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'assistant',
+        content: msg.text
+      }))));
+      formData.append('uid', user.uid);
 
-    const data = await res.json();
-    const botMsg = { sender: 'bot', text: data.reply };
-    setChat(prev => [...prev, botMsg]);
-  } catch (error) {
-    const errorMsg = { sender: 'bot', text: 'Sorry, something went wrong submitting your ticket.' };
-    setChat(prev => [...prev, errorMsg]);
-  }
-};
+      files.forEach(file => {
+        formData.append('attachments', file);
+      });
+
+      const res = await fetch('http://localhost:5000/api/chat/confirm-ticket', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      const botMsg = { sender: 'bot', text: data.reply };
+      setChat(prev => [...prev, botMsg]);
+    } catch (error) {
+      const errorMsg = { sender: 'bot', text: 'Sorry, something went wrong submitting your ticket.' };
+      setChat(prev => [...prev, errorMsg]);
+    }
+  };
 
   return user ? (
     <ChatLayout
@@ -91,7 +74,7 @@ function App() {
       setInput={setInput}
       sendMessage={sendMessage}
       handleTicketConfirmation={handleTicketConfirmation}
-      user={user} // Pass user to ChatLayout
+      user={user}
     />
   ) : (
     <LoginForm onLogin={setUser} />

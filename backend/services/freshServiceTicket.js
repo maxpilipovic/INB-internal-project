@@ -1,69 +1,89 @@
 import axios from 'axios';
 import openai from '../config/openai.js';
 import { db } from '../config/firebase.js';
+import fs from 'fs';
+async function generateTicketDetailsFromHistory(history) {
+  const userOnly = history
+  .filter(msg => msg.role === 'user')
+  .map(msg => `- ${msg.content}`)
+  .join('\n');
 
-async function generateTicketDetails(userMessage) {
+  const systemPrompt = `
+You are an IT Help Desk assistant. Based on the user's messages below, generate a FreshService help desk ticket with:
+- "subject": a short, clear title (5-8 words)
+- "description": a detailed explanation based on the user's problem
+- "priority": 1 (Low), 2 (Medium), 3 (High), or 4 (Urgent)
 
-     const systemPrompt = `
-You are an AI assistant helping an IT support team. 
-Given a user's message, generate a JSON object with the following fields:
-- subject: a brief title of the issue
-- description: a clear, professional summary
-- priority: 1 (Low), 2 (Medium), 3 (High), or 4 (Urgent) depending on urgency
+Follow these **Priority Rules**:
+- Use priority 4 (Urgent) if the user mentions:
+  - system-wide outage
+  - urgent business impact
+  - security or data breach
+- Use priority 2 (Medium) for login problems, password resets, or email access issues
+- Use priority 1 (Low) for general questions, how-to requests, or minor inconveniences
+- Use priority 3 (High) if the issue is blocking but not critical (e.g., can't print, software crashes, local network issues)
 
-Return only the JSON. Example:
+Respond with **only** valid JSON. No extra commentary or explanation.
+
+Example:
 {
-  "subject": "Cannot access Outlook email",
-  "description": "The user is experiencing issues accessing their Outlook email account. They have tried restarting their computer and checking internet connectivity.",
+  "subject": "Outlook email access error",
+  "description": "User cannot access Outlook on mobile. Tried restarting, still fails. Error says 'Permission denied' on iPhone.",
   "priority": 2
 }
+
+Here is the user chat history:
+${userOnly}
 `;
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o',
     messages: [
       { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage },
+      { role: 'user', content: userOnly }
     ],
-    temperature: 0.4, //DONT KNOW WHAT TEMP IS? OPENAI SUGGESTED
+    temperature: 0.4,
   });
 
-  const json = completion.choices?.[0]?.message?.content;
+  const content = completion.choices?.[0]?.message?.content;
 
   try {
-    return JSON.parse(json);
-  } catch (error) {
-    console.error('Error parsing JSON:', error);
-
+    return JSON.parse(content);
+  } catch {
+    console.error('Failed to parse GPT ticket details.');
     return {
-        subject: 'User reported an issue',
-        description: 'userMessage',
-        priority: 2,
+      subject: 'User-reported issue',
+      description: userOnly,
+      priority: 2,
     };
   }
 }
 
-export async function submitFreshServiceTicket(userMessage, uid) {
+export async function submitFreshServiceTicket(history, uid, attachmentUrls = []) {
   try {
-    //Lookup user email from Firestore
+    // Lookup user email from Firestore
     const userDoc = await db.collection('users').doc(uid).get();
     if (!userDoc.exists) throw new Error('User not found in Firestore');
     const userEmail = userDoc.data().email;
 
-    //Generate details with GPT
-    const ticketDetails = await generateTicketDetails(userMessage);
+    // Generate ticket details using GPT
+    const ticketDetails = await generateTicketDetailsFromHistory(history);
 
-    //Construct the payload
+    // Combine URLs into the description if any
+    const descriptionWithLinks = attachmentUrls.length
+      ? `${ticketDetails.description}\n\nAttached files:\n${attachmentUrls.map((url, i) => `File ${i + 1}: ${url}`).join('\n')}`
+      : ticketDetails.description;
+
+    // No attachments — regular JSON payload
     const payload = {
-      description: ticketDetails.description,
       subject: ticketDetails.subject,
-      email: userEmail, //REAL EMAIL
+      description: descriptionWithLinks,
+      email: userEmail,
       priority: ticketDetails.priority,
       status: 2,
       workspace_id: 2,
     };
 
-    //Submit to FreshService
     const response = await axios.post(
       'https://inbhelpdesk.freshservice.com/api/v2/tickets',
       payload,
@@ -80,7 +100,6 @@ export async function submitFreshServiceTicket(userMessage, uid) {
 
     console.log('✅ Ticket submitted:', response.data);
     return response.data;
-
   } catch (error) {
     console.error('❌ Failed to submit FreshService ticket:', error.response?.data || error.message);
     throw error;

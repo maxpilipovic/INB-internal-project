@@ -6,7 +6,13 @@ import { submitFreshServiceTicket } from '../services/freshServiceTicket.js';
 import { listFreshServiceTicketsByEmail } from '../services/freshServiceListAllTickets.js';
 import { getFreshServiceTicketById } from '../services/freshServiceListSpecificTicket.js';
 import { getTicketConversations } from '../services/freshServiceListTicketConversations.js';
-import { db } from '../config/firebase.js';
+import { db, bucket } from '../config/firebase.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 
@@ -175,10 +181,38 @@ router.post('/chat', async (req, res) => {
   }
 });
 
-router.post('/chat/confirm-ticket', async (req, res) => {
-  //const userConfirmation = req.body.message;
-  //const ticketContext = req.body.ticketContext || 'User did not provide issue context.';
-  const { message: userConfirmation, ticketContext = req.body.ticketContext || 'User did not provide issue context.', uid } = req.body;
+router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, res) => {
+  const userConfirmation = req.body.message;
+  const uid = req.body.uid;
+
+  let chatHistory = []
+  try {
+    chatHistory = JSON.parse(req.body.chatHistory || '[]');
+  } catch (err) {
+    console.error('Failed to parse chatHistory:', err);
+    chatHistory = [{ role: 'user', content: 'Unable to parse chat history. User requested support.' }];
+  }
+
+  //Uploads files to firebase storage
+  const attachmentUrls = [];
+
+  if (req.files && req.files.length > 0) {
+    for (const file of req.files) {
+      const fileName = `attachments/${uuidv4()}-${file.originalname}`;
+      const fileRef = bucket.file(fileName);
+      await fileRef.save(file.buffer, {
+        metadata: { contentType: file.mimetype },
+        resumable: false,
+      });
+
+      // Make public or generate signed URL
+      const [url] = await fileRef.getSignedUrl({
+        action: 'read',
+        expires: '03-01-2030',
+      });
+      attachmentUrls.push(url);
+    }
+  }
 
   const intentResponse = await openai.chat.completions.create({
     model: 'gpt-4o',
@@ -195,8 +229,7 @@ router.post('/chat/confirm-ticket', async (req, res) => {
 
   if (intent.includes('yes') || intent.includes('sure') || intent.includes('please') || intent.includes('yeah')) {
     try {
-      //CALS FRESH SERVICE API TO SUBMIT TICKET
-      await submitFreshServiceTicket(ticketContext, uid); // <-- use original issue here
+      await submitFreshServiceTicket(chatHistory, uid, attachmentUrls);
       const botReply = '✅ Your help desk ticket has been submitted successfully.';
       await logChat(uid, userConfirmation, botReply);
       return res.json({ reply: botReply });
