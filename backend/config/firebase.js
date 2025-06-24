@@ -6,18 +6,23 @@ import dotenv from 'dotenv';
 //This file is used to initialize the Firebase Admin SDK for server-side operations.
 //Firebase storage -> inb-internal-project.firebasestorage.app
 
-dotenv.config();
+dotenv.config(); // Loads FIREBASE_CONFIG from .env or Render's env panel
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf8')
-);
+// Ensure the env variable exists
+if (!process.env.FIREBASE_CONFIG) {
+  throw new Error('FIREBASE_CONFIG environment variable is not set');
+}
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-});
+const serviceAccount = JSON.parse(process.env.FIREBASE_CONFIG);
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: `${serviceAccount.project_id}.appspot.com`, // Optional: auto-connects storage
+  });
+}
 
 const db = admin.firestore();
-const bucket = admin.storage().bucket();
+const bucket = admin.storage().bucket(); // This now connects using project_id from above
 
 export { admin, db, bucket };
