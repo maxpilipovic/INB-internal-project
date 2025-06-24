@@ -9,6 +9,10 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
     setFiles(Array.from(e.target.files));
   };
 
+  const removeFile = (index) => {
+    setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="chat-container">
       <h1>INB, N.A IT Support Chatbot</h1>
@@ -38,7 +42,10 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
         />
         <div>
           {files.map((file, index) => (
-            <p key={index} style={{ fontSize: '12px' }}>{file.name}</p>
+            <div key={index}>
+              {file.name}
+              <button type="button" onClick={() => removeFile(index)}>Remove</button>
+            </div>
           ))}
         </div>
         <button onClick={sendMessage}>Send</button>
