@@ -3,7 +3,10 @@ import './styles/App.css';
 import ChatLayout from './components/Chat/ChatLayout';
 import LoginForm from './components/Auth/LoginForm';
 
+
 function App() {
+  const backendURL1 = import.meta.env.VITE_BACKEND_URL1;
+  const backendURL2 = import.meta.env.VITE_BACKEND_URL2;
   const [user, setUser] = useState(null);
   const [input, setInput] = useState('');
   const [chat, setChat] = useState([]);
@@ -19,7 +22,7 @@ function App() {
     setIsTyping(true); // Set typing state to true
 
     try {
-      const res = await fetch('http://localhost:5000/api/chat', {
+      const res = await fetch(`${backendURL2}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input, uid: user.uid })
@@ -59,7 +62,7 @@ function App() {
         formData.append('attachments', file);
       });
 
-      const res = await fetch('http://localhost:5000/api/chat/confirm-ticket', {
+      const res = await fetch(`${backendURL2}/api/chat/confirm-ticket`, {
         method: 'POST',
         body: formData,
       });

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../../services/firebaseClient';
 
 function Login({ onLogin }) {
+  const backendURL1 = import.meta.env.VITE_BACKEND_URL1;
+  const backendURL2 = import.meta.env.VITE_BACKEND_URL2;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
@@ -15,7 +17,7 @@ function Login({ onLogin }) {
       const user = userCredential.user;
 
       // Send to backend
-      const res = await fetch('http://localhost:5000/api/auth', {
+      const res = await fetch(`${backendURL2}/api/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

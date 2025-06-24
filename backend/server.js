@@ -10,6 +10,7 @@ import chatRoutes from './routes/chat.js'
 import authRoutes from './routes/auth.js';
 
 //Port
+const port = process.env.PORT || 5000;
 
 //Load environment variables
 dotenv.config();
@@ -26,6 +27,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/', chatRoutes);
 
 //Start server
-app.listen(process.env.PORT, () => console.log(`Server running at http://localhost:${process.env.PORT}`));
+app.listen(port, () => console.log(`Server running on PORT ${port}`));
 
 
