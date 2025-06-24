@@ -8,11 +8,15 @@ function App() {
   const [input, setInput] = useState('');
   const [chat, setChat] = useState([]);
 
+  //Adding isTyping functionality.
+  const [isTyping, setIsTyping] = useState(false);
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const userMsg = { sender: 'user', text: input };
     setChat(prev => [...prev, userMsg]);
+    setIsTyping(true); // Set typing state to true
 
     try {
       const res = await fetch('http://localhost:5000/api/chat', {
@@ -33,6 +37,8 @@ function App() {
     } catch (error) {
       const errorMsg = { sender: 'bot', text: 'Sorry, something went wrong.' };
       setChat(prev => [...prev, errorMsg]);
+    } finally {
+      setIsTyping(false); // Reset typing state
     }
   };
 
@@ -75,6 +81,7 @@ function App() {
       sendMessage={sendMessage}
       handleTicketConfirmation={handleTicketConfirmation}
       user={user}
+      isTyping={isTyping}
     />
   ) : (
     <LoginForm onLogin={setUser} />

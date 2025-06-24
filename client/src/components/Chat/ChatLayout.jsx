@@ -1,9 +1,11 @@
 import React from 'react';
 import MessageBubble from './MessageBubble';
+import { useEffect, useRef} from 'react';
 
-function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmation}) {
+function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmation, isTyping}) {
 
   const [files, setFiles] = React.useState([]);
+  const messageEndRef = useRef();
 
   const handleFileChange = (e) => {
     setFiles(Array.from(e.target.files));
@@ -12,6 +14,10 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
   const removeFile = (index) => {
     setFiles(prevFiles => prevFiles.filter((_, i) => i !== index));
   };
+
+  useEffect(() => {
+    messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chat]);
 
   return (
     <div className="chat-container">
@@ -26,6 +32,13 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
             onConfirm={(text) => handleTicketConfirmation(text, files)} //Pass file now
           />
         ))}
+
+        {isTyping && (
+          <div className="typing-indicator">
+            <em>Bot is typing...</em>
+          </div>
+        )}
+        <div ref={messageEndRef} />
       </div>
       <div className="input-area">
         <input
@@ -42,7 +55,7 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
         />
         <div>
           {files.map((file, index) => (
-            <div key={index}>
+            <div key={index} className="file-preview">
               {file.name}
               <button type="button" onClick={() => removeFile(index)}>Remove</button>
             </div>

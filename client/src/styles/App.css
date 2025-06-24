@@ -1,5 +1,14 @@
 /* SIMPLE UI FRONTEND FOR CHATBOT */
 
+
+/* TYPING INDICATOR */
+.typing-indicator {
+  font-style: italic;
+  color: #777;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+}
+
 /* Button */
 .confirmation-buttons {
   margin-top: 10px;
@@ -19,13 +28,17 @@
   flex-direction: column; /*Column for entire page*/
   height: 100vh; /*Height of entire page*/
   width: 100vw; /*Width of entire page*/
+  background: #f7f9fb;
 }
+
 
 .chat-container h1 {
   font-weight: 700; /*Font weight for header*/
   font-size: 1.5rem; /*Font size for header (1.5rem from root)*/
-  padding: 20px; /*Padding for header*/
-  color: #111; /*Black Color for header text*/
+  padding: 16px 24px; /*Padding for header*/
+  color: #222; /*Black Color for header text*/
+  border-bottom: 1px solid #ddd;
+  background: white;
 }
 
 .chat-box {
@@ -45,13 +58,34 @@
   */
 }
 
+/* FILE PREVIEW */
+.file-preview {
+  background-color: #f1f1f1;
+  color: #333;
+  border-radius: 12px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 0;
+  max-width: 300px;
+
+}
+
+
+
+
 /* Chat messages */
 .chat-message {
-  max-width: 75%; /*Max width for each message, then jumps down line*/
-  padding: 14px 20px; /*Padding for messages*/
+  max-width: 70%; /*Max width for each message, then jumps down line*/
+  padding: 12px 16px; /*Padding for messages*/
   border-radius: 16px; /*Rounded corners for messages*/
   font-size: 1rem; /*Font size (1rem from root)*/
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.1); /* Adds box shadow around messages*/
+  box-shadow: 0 2px 4px rgb(0, 0, 0, 0.08); /* Adds box shadow around messages*/
+  line-height: 1.4; /* Line height for messages*/
+  word-break: break-word; /*Breaks long words to fit in message bubble*/
+  transition: all 0.2s ease-in-out; /*Transition for hover effect*/
 }
 
 /*Client messages...*/
@@ -59,6 +93,7 @@
   background: #007bff; /*Text bubble blue*/
   color: white; /*Text color white*/
   align-self: flex-end; /*Aligns to the right*/
+  border-bottom-right-radius: 4px; /*Rounded bottom right corner*/
 }
 
 /*Chatbot messages...*/
@@ -66,22 +101,40 @@
   background: #e5e5ea; /*Text bubble light grey*/
   color: #111; /*Text color black*/
   align-self: flex-start; /*Aligns to the left*/
+  border-bottom-left-radius: 4px; /*Rounded bottom left corner*/
 }
 
 /*Input area for text*/
 .input-area {
   display: flex; /*Flexbox for input area*/
-  padding: 16px 20px; /*Padding for input area*/
+  flex-direction: column;
+  padding: 12px 20px; /*Padding for input area*/
   border-top: 1px solid #eee; /*Top border for input area*/
   background: white; /*Background color white*/
 }
 
 /*Input field*/
-input[type="text"] {
+.input-area input[type="text"] {
   flex-grow: 1; /*Takes up remaining spae*/
   border-radius: 12px; /*Rounded corners*/
   padding: 12px 16px; /* Padding for input field*/
   font-size: 1rem; /*Font size (1rem from root)*/
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
+.input-area input[type="file"] {
+  margin-bottom: 10px;
+}
+
+.input-area button {
+  align-self: flex-end;
+  cursor: pointer;
+  background-color: #007bff;
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
 }
 
 /* Send button */
@@ -99,3 +152,80 @@ button:hover {
   background: #0056b3; /*Background color blue for HOVER EFFECT*/
 }
 
+/* LOGIN PAGE */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  width: 100vw;
+  background: #f7f9fb;
+  font-family: 'Inter', sans-serif;
+}
+
+.login-box {
+  width: 100%;
+  max-width: 420px;
+  background: white;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-box h1.version-label {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 0;
+}
+
+.login-box .description {
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.5;
+}
+
+.login-box .credits {
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: -10px;
+}
+
+.login-box h2 {
+  font-size: 1.3rem;
+  margin-top: 10px;
+  color: #222;
+}
+
+.login-box input {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  outline: none;
+}
+
+.login-box button {
+  background: #007bff;
+  color: white;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  
+}
+
+.login-box button:hover {
+  background: #0056b3;
+}
+
+.login-box .toggle-auth {
+  font-size: 0.9rem;
+  color: #007bff;
+  cursor: pointer;
+  text-align: center;
+}

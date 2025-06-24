@@ -34,25 +34,40 @@ function Login({ onLogin }) {
 
   return (
     <div className="login-page">
-      <h2>{isRegistering ? 'Register' : 'Login'} to INB IT Chatbot</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-      /><br />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-      /><br />
-      <button onClick={handleAuth}>
-        {isRegistering ? 'Create Account' : 'Login'}
-      </button>
-      <p onClick={() => setIsRegistering(!isRegistering)} style={{ cursor: 'pointer' }}>
-        {isRegistering ? 'Already have an account? Login' : 'No account? Register here'}
-      </p>
+      <div className="login-box">
+
+        <h1 className="version-label">Version 1.0.0</h1>
+        <p className="description">
+          Welcome to the INB IT Support Chatbot. This intelligent assistant is designed to help you resolve common technical issues, answer IT-related questions, and create support tickets when needed — all in real-time.
+        </p>
+        <p className="credits">
+          Built by Max Pilipovic.
+        </p>
+
+        <h2>{isRegistering ? 'Register' : 'Login'} to INB IT Chatbot</h2>
+
+        <input
+          type="email"
+          placeholder="INB Email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={e => setPassword(e.target.value)}
+        />
+
+        <button onClick={handleAuth}>
+          {isRegistering ? 'Create Account' : 'Login'}
+        </button>
+
+        <p onClick={() => setIsRegistering(!isRegistering)} style={{ cursor: 'pointer' }}>
+          {isRegistering ? 'Already have an account? Login' : 'No account? Register here'}
+        </p>
+      </div>
     </div>
   );
 }
