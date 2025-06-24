@@ -13,8 +13,8 @@ if (!process.env.FIREBASE_CONFIG) {
 
 let parsedConfig;
 try {
-  parsedConfig = JSON.parse(process.env.FIREBASE_CONFIG); // 👈 parse first
-  // Now fix the private_key field only
+  parsedConfig = JSON.parse(process.env.FIREBASE_CONFIG); //parse first
+  //Now fixff
   parsedConfig.private_key = parsedConfig.private_key.replace(/\\n/g, '\n');
 } catch (err) {
   console.error('Failed to parse FIREBASE_CONFIG:', err.message);
