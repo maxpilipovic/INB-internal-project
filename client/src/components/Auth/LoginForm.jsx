@@ -8,7 +8,10 @@ function Login({ onLogin }) {
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
 
-  const handleAuth = async () => {
+  const handleAuth = async (e) => {
+
+    e.preventDefault();
+
     try {
       const userCredential = isRegistering
         ? await createUserWithEmailAndPassword(auth, email, password)
@@ -48,23 +51,28 @@ function Login({ onLogin }) {
 
         <h2>{isRegistering ? 'Register' : 'Login'} to INB IT Chatbot</h2>
 
-        <input
-          type="email"
-          placeholder="INB Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-        />
+        <form className="auth-form" onSubmit={handleAuth}>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        />
+          <input
+            type="email"
+            placeholder="INB Email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+          />
 
-        <button onClick={handleAuth}>
-          {isRegistering ? 'Create Account' : 'Login'}
-        </button>
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            required
+          />
+
+          <button className="auth-button" type="submit">
+            {isRegistering ? 'Create Account' : 'Login'}
+          </button>
+        </form>
 
         <p onClick={() => setIsRegistering(!isRegistering)} style={{ cursor: 'pointer' }}>
           {isRegistering ? 'Already have an account? Login' : 'No account? Register here'}

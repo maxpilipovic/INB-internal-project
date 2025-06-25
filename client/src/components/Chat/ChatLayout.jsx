@@ -41,27 +41,38 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
         <div ref={messageEndRef} />
       </div>
       <div className="input-area">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-        />
-        <input
-          type="file"
-          multiple
-          onChange={handleFileChange}
-          style={{ marginTop: '10px' }}
-        />
-        <div>
-          {files.map((file, index) => (
-            <div key={index} className="file-preview">
-              {file.name}
-              <button type="button" onClick={() => removeFile(index)}>Remove</button>
-            </div>
-          ))}
-        </div>
-        <button onClick={sendMessage}>Send</button>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            sendMessage();
+          }}
+        >
+
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+          />
+
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            style={{ marginTop: '10px' }}
+          />
+
+          <div>
+            {files.map((file, index) => (
+              <div key={index} className="file-preview">
+                {file.name}
+                <button type="button" onClick={() => removeFile(index)}>Remove</button>
+              </div>
+            ))}
+          </div>
+
+          <button type="submit">Send</button>
+        </form>
       </div>
     </div>
   );

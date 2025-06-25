@@ -15,6 +15,7 @@ function App() {
   const [isTyping, setIsTyping] = useState(false);
 
   const sendMessage = async () => {
+
     if (!input.trim()) return;
 
     const userMsg = { sender: 'user', text: input };

@@ -105,7 +105,7 @@
 }
 
 /*Input area for text*/
-.input-area {
+.input-area form{
   display: flex; /*Flexbox for input area*/
   flex-direction: column;
   padding: 12px 20px; /*Padding for input area*/
@@ -139,7 +139,7 @@
 
 /* Send button */
 button {
-  margin-left: 12px; /*Margin left for button*/
+  
   background: #007bff; /*Background color blue*/
   color: white; /*Color white*/
   border-radius: 12px; /*Rounded*/
@@ -207,25 +207,8 @@ button:hover {
   outline: none;
 }
 
-.login-box button {
-  background: #007bff;
-  color: white;
-  padding: 12px 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  
-}
-
-.login-box button:hover {
-  background: #0056b3;
-}
-
-.login-box .toggle-auth {
-  font-size: 0.9rem;
-  color: #007bff;
-  cursor: pointer;
-  text-align: center;
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
