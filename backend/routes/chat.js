@@ -2,7 +2,7 @@ import express from 'express';
 import openai from '../config/openai.js';
 import { fetchFreshServiceArticles } from '../services/freshService.js';
 import { logChat } from '../services/firestore.js';
-import { submitFreshServiceTicket } from '../services/freshServiceTicket.js';
+import { generateTicketDetailsFromHistory, submitFreshServiceTicket } from '../services/freshServiceTicket.js';
 import { listFreshServiceTicketsByEmail } from '../services/freshServiceListAllTickets.js';
 import { getFreshServiceTicketById } from '../services/freshServiceListSpecificTicket.js';
 import { getTicketConversations } from '../services/freshServiceListTicketConversations.js';
@@ -244,6 +244,18 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
   const botReply = 'Okay, no ticket has been created. Let me know if you need anything else.';
   await logChat(uid, userConfirmation, botReply);
   return res.json({ reply: botReply });
+});
+
+router.post('/chat/preview-ticket', async (req, res) => {
+  const { chatHistory, uid } = req.body;
+
+  try {
+    const ticketDetails = await generateTicketDetailsFromHistory(chatHistory);
+    return res.json({ ticket: ticketDetails });
+  } catch (error) {
+    console.error('Error generating ticket preview:', error);
+    return res.status(500).json({ error: 'Failed to generate ticket preview.' });
+  }
 });
 
 export default router;

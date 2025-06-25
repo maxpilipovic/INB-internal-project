@@ -2,7 +2,7 @@ import React from 'react';
 import MessageBubble from './MessageBubble';
 import { useEffect, useRef} from 'react';
 
-function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmation, isTyping}) {
+function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmation, handleTicketPreview, isTyping, ticketPreview, setTicketPreview}) {
 
   const [files, setFiles] = React.useState([]);
   const messageEndRef = useRef();
@@ -30,6 +30,7 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
             text={msg.text}
             showConfirmButtons={msg.showConfirmButtons}
             onConfirm={(text) => handleTicketConfirmation(text, files)} //Pass file now
+            onPreview={handleTicketPreview}
           />
         ))}
 
@@ -39,6 +40,16 @@ function ChatLayout({chat, input, setInput, sendMessage, handleTicketConfirmatio
           </div>
         )}
         <div ref={messageEndRef} />
+
+        {ticketPreview && (
+          <div className="ticket-preview-box">
+            <h3>🎟️ Ticket Preview</h3>
+            <p><strong>Subject:</strong> {ticketPreview.subject}</p>
+            <p><strong>Description:</strong> {ticketPreview.description}</p>
+            <p><strong>Priority:</strong> {['Low', 'Medium', 'High', 'Urgent'][ticketPreview.priority - 1]}</p>
+            <button onClick={() => setTicketPreview(null)}>Clear Preview</button>
+          </div>
+        )}
       </div>
       <div className="input-area">
         <form

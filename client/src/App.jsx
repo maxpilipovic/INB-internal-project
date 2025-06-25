@@ -10,6 +10,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [input, setInput] = useState('');
   const [chat, setChat] = useState([]);
+  const [ticketPreview, setTicketPreview] = useState(null);
 
   //Adding isTyping functionality.
   const [isTyping, setIsTyping] = useState(false);
@@ -77,6 +78,27 @@ function App() {
     }
   };
 
+  const handleTicketPreview = async () => {
+    try {
+      const res = await fetch(`${backendURL2}/api/chat/preview-ticket`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatHistory: chat.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          })),
+          uid: user.uid
+        })
+      });
+
+      const data = await res.json();
+      setTicketPreview(data.ticket);
+    } catch (error) {
+      console.error('Failed to preview ticket:', error);
+    }
+  };
+
   return user ? (
     <ChatLayout
       chat={chat}
@@ -84,8 +106,11 @@ function App() {
       setInput={setInput}
       sendMessage={sendMessage}
       handleTicketConfirmation={handleTicketConfirmation}
+      handleTicketPreview={handleTicketPreview}
       user={user}
       isTyping={isTyping}
+      ticketPreview={ticketPreview}
+      setTicketPreview={setTicketPreview}
     />
   ) : (
     <LoginForm onLogin={setUser} />

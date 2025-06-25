@@ -2,7 +2,8 @@ import axios from 'axios';
 import openai from '../config/openai.js';
 import { db } from '../config/firebase.js';
 import fs from 'fs';
-async function generateTicketDetailsFromHistory(history) {
+
+export async function generateTicketDetailsFromHistory(history) {
   const userOnly = history
   .filter(msg => msg.role === 'user')
   .map(msg => `- ${msg.content}`)
@@ -105,5 +106,3 @@ export async function submitFreshServiceTicket(history, uid, attachmentUrls = []
     throw error;
   }
 }
-
-export default submitFreshServiceTicket;
