@@ -7,6 +7,7 @@ import { listFreshServiceTicketsByEmail } from '../services/freshServiceListAllT
 import { getFreshServiceTicketById } from '../services/freshServiceListSpecificTicket.js';
 import { getTicketConversations } from '../services/freshServiceListTicketConversations.js';
 import { db, bucket } from '../config/firebase.js';
+import { sanitizeInput } from '../utils/sanitizeInput.js'
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -21,10 +22,10 @@ router.post('/chat', async (req, res) => {
   //const { message: userMessage } = req.body;
   const { message: userMessage, uid } = req.body;
 
-
+  const sanitizeMessage = sanitizeInput(userMessage);
 
   //Check if user is asking for ticket activity
-  const activityMatch = userMessage.match(/(?:conversations?|updates?|history|activity).*ticket\s*#?(\d{3,})/i);
+  const activityMatch = sanitizeMessage.match(/(?:conversations?|updates?|history|activity).*ticket\s*#?(\d{3,})/i);
 
   if (activityMatch) {
     const ticketId = activityMatch[1];
@@ -35,7 +36,7 @@ router.post('/chat', async (req, res) => {
 
       if (!conversations.length) {
         const reply = `There are no conversations on ticket #${ticketId} yet.`;
-        await logChat(uid, userMessage, reply);
+        await logChat(uid, sanitizeMessage, reply);
         return res.json({ reply });
       }
 
@@ -47,18 +48,18 @@ router.post('/chat', async (req, res) => {
       }).join('\n');
 
       const reply = `📜 Recent conversations on ticket #${ticketId}:\n\n${formatted}`;
-      await logChat(uid, userMessage, reply);
+      await logChat(uid, sanitizeMessage, reply);
       return res.json({ reply });
 
     } catch (err) {
       const reply = `Sorry, I couldn't fetch conversations for ticket #${ticketId}.`;
-      await logChat(uid, userMessage, reply);
+      await logChat(uid, sanitizeMessage, reply);
       return res.json({ reply });
     }
   }
 
   //Check if user is asking for a specific ticket
-  const ticketIdMatch = userMessage.match(/(?:ticket\s*#?|#)(\d{3,})/i);
+  const ticketIdMatch = sanitizeMessage.match(/(?:ticket\s*#?|#)(\d{3,})/i);
 
   if (ticketIdMatch) {
     const ticketId = ticketIdMatch[1];
@@ -78,20 +79,20 @@ router.post('/chat', async (req, res) => {
 
       const reply = `📝 Ticket #${ticket.id} - *${ticket.subject}* is currently **${statusMap[ticket.status] || 'Unknown'}**.`;
 
-      await logChat(uid, userMessage, reply);
+      await logChat(uid, sanitizeMessage, reply);
       return res.json({ reply });
 
     } catch (error) {
       console.error('Error checking specific ticket:', error);
       const reply = `Sorry, I couldn't retrieve info for ticket #${ticketId}.`;
-      await logChat(uid, userMessage, reply);
+      await logChat(uid, sanitizeMessage, reply);
       return res.json({ reply });
       }
   }
 
 
   //Check if user is asking for LIST tickets?
-  if (/list.*tickets|show.*tickets|my.*tickets|view.*tickets|status.*ticket|update.*ticket|how.*ticket.*doing|check.*ticket/i.test(userMessage)) {
+  if (/list.*tickets|show.*tickets|my.*tickets|view.*tickets|status.*ticket|update.*ticket|how.*ticket.*doing|check.*ticket/i.test(sanitizeMessage)) {
     try {
 
       //Get from db
@@ -118,7 +119,7 @@ router.post('/chat', async (req, res) => {
       const formatted = tickets.slice(0, 5).map((t) => `#${t.id} - ${t.subject} [${statusMap[t.status] || 'Unknown'}]`).join('\n');
 
       const reply = `Here are your open tickets:\n\n${formatted}\n\nYou can ask me to create a new ticket if you need help with something else.`;
-      await logChat(uid, userMessage, reply);
+      await logChat(uid, sanitizeMessage, reply);
       return res.json({ reply})
     } catch (error) {
       console.error('Error fetching tickets:', error);
@@ -127,7 +128,7 @@ router.post('/chat', async (req, res) => {
   }
 
   //1.Try to search knowledge base
-  const kbArticles = await fetchFreshServiceArticles(userMessage);
+  const kbArticles = await fetchFreshServiceArticles(sanitizeMessage);
   const kbText = kbArticles.map(article => `- ${article.title}: ${article.content}`).join('\n');
 
   //2.Ask GPT to try answering using KB content
@@ -138,7 +139,7 @@ router.post('/chat', async (req, res) => {
     },
     {
         role: 'user',
-        content: userMessage,
+        content: sanitizeMessage,
     },
   ];
 
@@ -153,11 +154,11 @@ router.post('/chat', async (req, res) => {
     const botReply = completion.choices?.[0]?.message?.content?.trim();
 
     //3.Log the response
-    await logChat(uid, userMessage, botReply);
+    await logChat(uid, sanitizeMessage, botReply);
 
     //4.Check if user wants to create a ticket
     //This regex checks if the user message or bot reply indicates a desire to create a ticket
-    const wantsTicket = /submit.*ticket|create.*ticket|help desk ticket|i need.*help/i.test(userMessage) || 
+    const wantsTicket = /submit.*ticket|create.*ticket|help desk ticket|i need.*help/i.test(sanitizeMessage) || 
                     /should I create.*ticket|would you like.*ticket|I couldn’t find a good answer/i.test(botReply);
 
                     
@@ -166,7 +167,7 @@ router.post('/chat', async (req, res) => {
       return res.json({ 
         reply: botReply, 
         awaitingTicketConfirmation: true, //FLAG SENT TO FRONTEND TO SHOW CONFIRMATION BUTTONS
-        ticketContext: userMessage, 
+        ticketContext: sanitizeMessage, 
     });
     }
 
@@ -176,7 +177,7 @@ router.post('/chat', async (req, res) => {
   } catch (err) {
     console.error('OPENAI Error', err);
     const botReply = 'GPT is currently unavailable.';
-    await logChat(userMessage, botReply);
+    await logChat(sanitizeMessage, botReply);
     return res.json({ reply: botReply });
   }
 });
