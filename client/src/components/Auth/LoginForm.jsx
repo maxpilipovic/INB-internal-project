@@ -11,16 +11,18 @@ function Login({ onLogin }) {
   const handleAuth = async (e) => {
 
     e.preventDefault();
-
+    
     try {
       const userCredential = isRegistering
         ? await createUserWithEmailAndPassword(auth, email, password)
         : await signInWithEmailAndPassword(auth, email, password);
 
       const user = userCredential.user;
+      
+      onLogin({ uid: user.uid, email: user.email });
 
-      // Send to backend
-      const res = await fetch(`${backendURL2}/api/auth`, {
+      //Send to backend
+      fetch(`${backendURL2}/api/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -28,9 +30,7 @@ function Login({ onLogin }) {
           email: user.email,
         }),
       });
-
-      const data = await res.json();
-      onLogin(data.user);
+      
     } catch (err) {
       console.error('Auth failed', err);
       alert(err.message);
