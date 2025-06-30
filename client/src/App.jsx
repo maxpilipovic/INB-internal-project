@@ -2,6 +2,7 @@ import { useState } from 'react';
 import './styles/App.css';
 import ChatLayout from './components/Chat/ChatLayout';
 import LoginForm from './components/Auth/LoginForm';
+import { Toaster } from 'react-hot-toast';
 
 
 function App() {
@@ -99,21 +100,26 @@ function App() {
     }
   };
 
-  return user ? (
-    <ChatLayout
-      chat={chat}
-      input={input}
-      setInput={setInput}
-      sendMessage={sendMessage}
-      handleTicketConfirmation={handleTicketConfirmation}
-      handleTicketPreview={handleTicketPreview}
-      user={user}
-      isTyping={isTyping}
-      ticketPreview={ticketPreview}
-      setTicketPreview={setTicketPreview}
-    />
-  ) : (
-    <LoginForm onLogin={setUser} />
+  return (
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
+      {user ? (
+        <ChatLayout
+          chat={chat}
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          handleTicketConfirmation={handleTicketConfirmation}
+          handleTicketPreview={handleTicketPreview}
+          user={user}
+          isTyping={isTyping}
+          ticketPreview={ticketPreview}
+          setTicketPreview={setTicketPreview}
+        />
+      ) : (
+        <LoginForm onLogin={setUser} />
+      )}
+    </>
   );
 }
 
