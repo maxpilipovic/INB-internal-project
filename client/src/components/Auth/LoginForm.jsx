@@ -57,7 +57,7 @@ function Login({ onLogin }) {
         onLogin({ uid: user.uid, email: user.email });
 
         //Send to backend
-        fetch(`${backendURL1}/api/auth`, {
+        fetch(`${backendURL2}/api/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -79,7 +79,7 @@ function Login({ onLogin }) {
     <div className="login-page">
       <div className="login-box">
 
-        <h1 className="version-label">Version 2.2.0</h1>
+        <h1 className="version-label">Version 2.2.1</h1>
         <p className="description">
           Welcome to the INB IT Support Chatbot. This intelligent assistant is designed to help you resolve common technical issues, answer IT-related questions, and create support tickets when needed — all in real-time.
         </p>
@@ -128,9 +128,9 @@ function Login({ onLogin }) {
         <h3>Dev Logs</h3>
         <h3>AS OF 06/30/2025. You must recreate an account.</h3>
         <ul>
+          <li><strong>v2.2.1</strong> - Added state management</li>
           <li><strong>v2.2.0</strong> - Email verification, notifications, reset password</li>
           <li><strong>v2.1.0</strong> - Fixed slow login page</li>
-          <li><strong>v2.0.0</strong> - Sanitized inputs</li>
         </ul>
       </div>
     </div>
