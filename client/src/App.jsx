@@ -1,20 +1,39 @@
+import { useEffect } from 'react';
 import { useState } from 'react';
 import './styles/App.css';
 import ChatLayout from './components/Chat/ChatLayout';
 import LoginForm from './components/Auth/LoginForm';
 import { Toaster } from 'react-hot-toast';
+import { auth } from './services/firebaseClient';
+import { onAuthStateChanged } from 'firebase/auth';
+import LoadingScreen from './components/Shared/LoadingScreen';
 
 
 function App() {
   const backendURL1 = import.meta.env.VITE_BACKEND_URL1;
   const backendURL2 = import.meta.env.VITE_BACKEND_URL2;
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [input, setInput] = useState('');
   const [chat, setChat] = useState([]);
   const [ticketPreview, setTicketPreview] = useState(null);
 
   //Adding isTyping functionality.
   const [isTyping, setIsTyping] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser && firebaseUser.emailVerified) {
+        setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
 
   const sendMessage = async () => {
 
@@ -25,7 +44,7 @@ function App() {
     setIsTyping(true); // Set typing state to true
 
     try {
-      const res = await fetch(`${backendURL2}/api/chat`, {
+      const res = await fetch(`${backendURL1}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input, uid: user.uid })
@@ -65,7 +84,7 @@ function App() {
         formData.append('attachments', file);
       });
 
-      const res = await fetch(`${backendURL2}/api/chat/confirm-ticket`, {
+      const res = await fetch(`${backendURL1}/api/chat/confirm-ticket`, {
         method: 'POST',
         body: formData,
       });
@@ -81,7 +100,7 @@ function App() {
 
   const handleTicketPreview = async () => {
     try {
-      const res = await fetch(`${backendURL2}/api/chat/preview-ticket`, {
+      const res = await fetch(`${backendURL1}/api/chat/preview-ticket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -99,6 +118,9 @@ function App() {
       console.error('Failed to preview ticket:', error);
     }
   };
+
+  //Spinning loading thing
+  if (loading) return <LoadingScreen text="Authenticating user..." />;
 
   return (
     <>
