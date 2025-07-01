@@ -9,34 +9,6 @@
 
 /* SIMPLE UI FRONTEND FOR CHATBOT */
 
-/* DEV LOG BOX */
-.dev-log-box {
-  background: white;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  max-width: 280px;
-  width: 100%;
-  font-family: 'Inter', sans-serif;
-}
-
-.dev-log-box h3 {
-  font-size: 1.2rem;
-  color: #333;
-  margin-bottom: 12px;
-}
-
-.dev-log-box ul {
-  list-style: disc;
-  padding-left: 20px;
-  font-size: 0.9rem;
-  color: #555;
-}
-
-.dev-log-box li {
-  margin-bottom: 8px;
-}
-
 /* FORGOT PASSWORD */
 .forgot-password {
   cursor: pointer;

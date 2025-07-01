@@ -123,16 +123,6 @@ function Login({ onLogin }) {
         )}
         
       </div>
-
-      <div className="dev-log-box">
-        <h3>Dev Logs</h3>
-        <h3>AS OF 06/30/2025. You must recreate an account.</h3>
-        <ul>
-          <li><strong>v2.2.1</strong> - Added state management</li>
-          <li><strong>v2.2.0</strong> - Email verification, notifications, reset password</li>
-          <li><strong>v2.1.0</strong> - Fixed slow login page</li>
-        </ul>
-      </div>
     </div>
   );
 }
