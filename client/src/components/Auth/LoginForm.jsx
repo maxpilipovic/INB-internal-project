@@ -1,13 +1,19 @@
 import { useState } from 'react';
 import { auth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from '../../services/firebaseClient';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
-function Login({ onLogin }) {
+function LoginForm({ onLogin }) {
   const backendURL1 = import.meta.env.VITE_BACKEND_URL1;
   const backendURL2 = import.meta.env.VITE_BACKEND_URL2;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+
+
+  //Handle auth state change
+  // Inside component:
+  const navigate = useNavigate();
 
   const handleForgotPassword = async () => {
     if (!email) {
@@ -55,9 +61,10 @@ function Login({ onLogin }) {
 
         toast.success('Login successful!');
         onLogin({ uid: user.uid, email: user.email });
+        navigate('/'); //Forces redirect to main app
 
         //Send to backend
-        fetch(`${backendURL2}/api/auth`, {
+        fetch(`${backendURL1}/api/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -79,7 +86,7 @@ function Login({ onLogin }) {
     <div className="login-page">
       <div className="login-box">
 
-        <h1 className="version-label">Version 2.2.1</h1>
+        <h1 className="version-label">Version 3.0.1</h1>
         <p className="description">
           Welcome to the INB IT Support Chatbot. This intelligent assistant is designed to help you resolve common technical issues, answer IT-related questions, and create support tickets when needed — all in real-time.
         </p>
@@ -127,4 +134,4 @@ function Login({ onLogin }) {
   );
 }
 
-export default Login;
+export default LoginForm;

@@ -7,6 +7,7 @@ import { auth } from './services/firebaseClient';
 import { onAuthStateChanged } from 'firebase/auth';
 import LoadingScreen from './components/Shared/LoadingScreen';
 import ChatSidebar from './components/Sidebar/ChatSideBar';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 function App() {
   const backendURL1 = import.meta.env.VITE_BACKEND_URL1;
@@ -40,7 +41,7 @@ function App() {
     setIsTyping(true);
 
     try {
-      const res = await fetch(`${backendURL2}/api/chat`, {
+      const res = await fetch(`${backendURL1}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input, uid: user.uid, chatId }),
@@ -86,7 +87,7 @@ function App() {
         formData.append('attachments', file);
       });
 
-      const res = await fetch(`${backendURL2}/api/chat/confirm-ticket`, {
+      const res = await fetch(`${backendURL1}/api/chat/confirm-ticket`, {
         method: 'POST',
         body: formData,
       });
@@ -107,7 +108,7 @@ function App() {
 
   const handleTicketPreview = async () => {
     try {
-      const res = await fetch(`${backendURL2}/api/chat/preview-ticket`, {
+      const res = await fetch(`${backendURL1}/api/chat/preview-ticket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -131,42 +132,50 @@ function App() {
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
-      {user ? (
-        <div className="app-container">
-          <ChatSidebar
-            uid={user.uid}
-            activeChatId={chatId}
-            onSelectChat={async (chatDoc) => {
-              try {
-                const res = await fetch(`${backendURL2}/api/get-chat/${chatDoc.id}?uid=${user.uid}`);
-                const data = await res.json();
-                setChat(data.messages || []);
-                setChatId(chatDoc.id);
-              } catch (err) {
-                console.error('Failed to fetch chat messages:', err);
-              }
-            }}
-            onNewChat={() => {
-              setChat([]);
-              setChatId(null);
-            }}
-          />
-          <ChatLayout
-            chat={chat}
-            input={input}
-            setInput={setInput}
-            sendMessage={sendMessage}
-            handleTicketConfirmation={handleTicketConfirmation}
-            handleTicketPreview={handleTicketPreview}
-            user={user}
-            isTyping={isTyping}
-            ticketPreview={ticketPreview}
-            setTicketPreview={setTicketPreview}
-          />
-        </div>
-      ) : (
-        <LoginForm onLogin={setUser} />
-      )}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            user ? (
+              <div className="app-container">
+                <ChatSidebar
+                  uid={user.uid}
+                  activeChatId={chatId}
+                  onSelectChat={async (chatDoc) => {
+                    try {
+                      const res = await fetch(`${backendURL1}/api/get-chat/${chatDoc.id}?uid=${user.uid}`);
+                      const data = await res.json();
+                      setChat(data.messages || []);
+                      setChatId(chatDoc.id);
+                    } catch (err) {
+                      console.error('Failed to fetch chat messages:', err);
+                    }
+                  }}
+                  onNewChat={() => {
+                    setChat([]);
+                    setChatId(null);
+                  }}
+                />
+                <ChatLayout
+                  chat={chat}
+                  input={input}
+                  setInput={setInput}
+                  sendMessage={sendMessage}
+                  handleTicketConfirmation={handleTicketConfirmation}
+                  handleTicketPreview={handleTicketPreview}
+                  user={user}
+                  isTyping={isTyping}
+                  ticketPreview={ticketPreview}
+                  setTicketPreview={setTicketPreview}
+                />
+              </div>
+            ) : (
+              <Navigate to="/login" /> // 👈 Redirect to login if not logged in
+            )
+          }
+        />
+        <Route path="/login" element={<LoginForm onLogin={setUser} />} />
+      </Routes>
     </>
   );
 }

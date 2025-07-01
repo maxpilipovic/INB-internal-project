@@ -5,9 +5,28 @@
 
 
 
-
-
 /* SIMPLE UI FRONTEND FOR CHATBOT */
+
+/* LOG OUT BUTTON */
+.logout-button {
+  position: absolute;
+  top: 28px;
+  right: 24px;
+  background-color: #dc3545; /* Red */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  
+}
+
+.logout-button:hover {
+  background-color: #c82333; /* Darker red */
+}
 
 /* FORGOT PASSWORD */
 .forgot-password {
@@ -191,8 +210,8 @@ button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 50vh;
-  width: 50vw;
+  height: 100vh;
+  width: 100vw;
   gap: 40px; /* REMOVES THIS WHEN YOU REMOVE DEV LOGS */
   background: #f7f9fb;
   font-family: 'Inter', sans-serif;

@@ -20,6 +20,7 @@
     "multer": "^2.0.1",
     "openai": "^5.2.0",
     "react-hot-toast": "^2.5.2",
+    "react-router-dom": "^7.6.3",
     "uuid": "^11.1.0"
   }
 }
