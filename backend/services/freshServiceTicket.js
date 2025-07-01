@@ -65,7 +65,7 @@ export async function submitFreshServiceTicket(history, uid, attachmentUrls = []
     // Lookup user email from Firestore
     const userDoc = await db.collection('users').doc(uid).get();
     if (!userDoc.exists) throw new Error('User not found in Firestore');
-    const userEmail = userDoc.data().email;
+    const userEmail = userDoc.data().sanitizedEmail;
 
     // Generate ticket details using GPT
     const ticketDetails = await generateTicketDetailsFromHistory(history);
