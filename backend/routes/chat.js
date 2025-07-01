@@ -142,7 +142,7 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
     console.error('Failed to parse chatHistory:', err);
     chatHistory = [{ role: 'user', content: 'Unable to parse chat history. User requested support.' }];
   }
-
+  
   const attachmentUrls = [];
   if (req.files?.length) {
     for (const file of req.files) {

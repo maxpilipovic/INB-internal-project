@@ -41,7 +41,7 @@ function App() {
     setIsTyping(true);
 
     try {
-      const res = await fetch(`${backendURL1}/api/chat`, {
+      const res = await fetch(`${backendURL2}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input, uid: user.uid, chatId }),
@@ -87,7 +87,7 @@ function App() {
         formData.append('attachments', file);
       });
 
-      const res = await fetch(`${backendURL1}/api/chat/confirm-ticket`, {
+      const res = await fetch(`${backendURL2}/api/chat/confirm-ticket`, {
         method: 'POST',
         body: formData,
       });
@@ -108,7 +108,7 @@ function App() {
 
   const handleTicketPreview = async () => {
     try {
-      const res = await fetch(`${backendURL1}/api/chat/preview-ticket`, {
+      const res = await fetch(`${backendURL2}/api/chat/preview-ticket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -143,7 +143,7 @@ function App() {
                   activeChatId={chatId}
                   onSelectChat={async (chatDoc) => {
                     try {
-                      const res = await fetch(`${backendURL1}/api/get-chat/${chatDoc.id}?uid=${user.uid}`);
+                      const res = await fetch(`${backendURL2}/api/get-chat/${chatDoc.id}?uid=${user.uid}`);
                       const data = await res.json();
                       setChat(data.messages || []);
                       setChatId(chatDoc.id);
