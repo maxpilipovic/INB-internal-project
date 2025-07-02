@@ -88,6 +88,7 @@ function ChatLayout({
             <div className="button-group2">
               <button onClick={() => {
                 handleTicketConfirmation("submit ticket", files, () => {
+                setFiles([]);
                 setTicketPreview(null); //Hides the preview after submission
                 });
               }}>

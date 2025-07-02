@@ -24,7 +24,7 @@ try {
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(parsedConfig),
-    storageBucket: `${parsedConfig.project_id}.appspot.com`,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   });
 }
 

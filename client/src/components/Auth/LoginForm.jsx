@@ -90,7 +90,7 @@ function LoginForm({ onLogin }) {
         navigate('/'); //Forces redirect to main app
 
         //Send to backend
-        fetch(`${backendURL2}/api/auth`, {
+        fetch(`${backendURL1}/api/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -130,7 +130,7 @@ function LoginForm({ onLogin }) {
     <div className="login-page">
       <div className="login-box">
 
-        <h1 className="version-label">Version 4.0.0</h1>
+        <h1 className="version-label">Version 4.0.1</h1>
         <p className="description">
           Welcome to the INB IT Support Chatbot. This intelligent assistant is designed to help you resolve common technical issues, answer IT-related questions, and create support tickets when needed — all in real-time.
         </p>
