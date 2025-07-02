@@ -14,6 +14,13 @@ export async function logChat(uid, userMessage, botReply, chatId = null) {
 
     if (chatId) {
       const chatDocRef = chatsRef.doc(chatId);
+      const chatDoc = await chatDocRef.get();
+
+      if (!chatDoc.exists) {
+        console.warn(`Chat ${chatId} does not exist. Skipping update.`);
+        return null;
+      }
+
       await chatDocRef.update({
         messages: admin.firestore.FieldValue.arrayUnion(...chatMessagePair),
         updatedAt: Timestamp.now(),

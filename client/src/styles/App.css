@@ -7,6 +7,32 @@
 
 /* SIMPLE UI FRONTEND FOR CHATBOT */
 
+/* CONFIRMATION BUTTONS */
+
+/* PREVIEW SHIT */
+.ticket-confirmation-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.ticket-confirmation-box .button-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* CONFIRM SHIT */
+.ticket-preview-box {
+  display: flex;
+  flex-direction: column;
+}
+
+.ticket-preview-box .button-group2 {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
 /* LOG OUT BUTTON */
 .logout-button {
   position: absolute;

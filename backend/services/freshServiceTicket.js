@@ -106,3 +106,18 @@ export async function submitFreshServiceTicket(history, uid, attachmentUrls = []
     throw error;
   }
 }
+
+export async function submitFreshServiceTicketFromPreview(ticketPreview, uid, attachmentUrls = []) {
+  const { subject, description, priority } = ticketPreview;
+
+  // Use existing method but pass explicitly generated fields
+  return await submitFreshServiceTicket(
+    [
+      { role: 'user', content: subject },
+      { role: 'assistant', content: description }
+    ],
+    uid,
+    attachmentUrls,
+    { subject, description, priority }
+  );
+}

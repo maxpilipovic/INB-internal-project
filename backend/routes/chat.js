@@ -8,6 +8,7 @@ import { getFreshServiceTicketById } from '../services/freshServiceListSpecificT
 import { getTicketConversations } from '../services/freshServiceListTicketConversations.js';
 import { db, bucket } from '../config/firebase.js';
 import { sanitizeInput } from '../utils/sanitizeInput.js';
+import { submitFreshServiceTicketFromPreview } from '../services/freshServiceTicket.js';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -17,6 +18,9 @@ const router = express.Router();
 router.post('/chat', async (req, res) => {
   const { message: userMessage, uid, chatId } = req.body;
   const sanitizeMessage = sanitizeInput(userMessage);
+
+  //CHECKING TICKET STUFF FIRST
+
 
   // Ticket activity
   const activityMatch = sanitizeMessage.match(/(?:conversations?|updates?|history|activity).*ticket\s*#?(\d{3,})/i);
@@ -96,7 +100,9 @@ router.post('/chat', async (req, res) => {
   const gptMessages = [
     {
       role: 'system',
-      content: `You are an internal INB IT Help Desk assistant. Use the following FreshService knowledge base to help the user:\n\n${kbText || 'No articles found.'}\n\nIf the knowledge base is insufficient, offer to create a help desk ticket. If the user directly requests to create a ticket, proceed with submitting one.`,
+      content:  `You are an internal IT Help Desk assistant for INB.
+                Use the following FreshService knowledge base to help the user:\n\n${kbText || 'No articles found.'}
+                If the user seems to want help beyond knowledge base, gently ask if they’d like to open a help desk ticket.`,
     },
     {
       role: 'user',
@@ -113,13 +119,23 @@ router.post('/chat', async (req, res) => {
     const botReply = completion.choices?.[0]?.message?.content?.trim();
     const newChatId = await logChat(uid, sanitizeMessage, botReply, chatId);
 
-    const wantsTicket =
-      /submit.*ticket|create.*ticket|help desk ticket|i need.*help/i.test(sanitizeMessage) ||
-      /should I create.*ticket|would you like.*ticket|I couldn’t find a good answer/i.test(botReply);
+    const intentCheck = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: 'Based on the user message below, does the user want to create a help desk ticket? Answer only "yes" or "no".',
+        },
+        { role: 'user', content: sanitizeMessage },
+      ],
+    });
+
+    const intentResponse = intentCheck.choices?.[0]?.message?.content?.trim().toLowerCase();
+    const wantsPreview = ['yes', 'yes.'].includes(intentResponse);
 
     return res.json({
       reply: botReply || 'GPT is currently unavailable.',
-      awaitingTicketConfirmation: wantsTicket,
+      awaitingTicketPreview: wantsPreview,
       chatId: newChatId || chatId,
     });
   } catch (err) {
@@ -135,14 +151,39 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
   const uid = req.body.uid;
   const chatId = req.body.chatId;
 
-  let chatHistory = [];
+  //Load stored ticket preview
+  let ticketPreview;
   try {
-    chatHistory = JSON.parse(req.body.chatHistory || '[]');
-  } catch (err) {
-    console.error('Failed to parse chatHistory:', err);
-    chatHistory = [{ role: 'user', content: 'Unable to parse chat history. User requested support.' }];
+    const chatDoc = await db.collection('users').doc(uid).collection('ticketPreviews').doc(chatId).get();
+    ticketPreview = chatDoc.data()?.ticketPreview;
+
+    if (!ticketPreview) {
+      throw new Error('No ticket preview found. Please generate a preview first.');
+    }
+  } catch (error) {
+    console.error('Error fetching ticket preview:', error);
+    return res.status(400).json({ reply: '❌ No preview found. Please preview the ticket first.' });
   }
-  
+
+  //Check user intent with GPT
+  let intent;
+  try {
+    const intentResponse = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: 'The user was just asked if they want to submit a ticket. Determine if their response is a yes.',
+        },
+        { role: 'user', content: userMessage },
+      ],
+    });
+    intent = intentResponse.choices?.[0]?.message?.content?.toLowerCase();
+  } catch (error) {
+    console.error('Error determining intent:', error);
+  }
+
+  //Handle attachments
   const attachmentUrls = [];
   if (req.files?.length) {
     for (const file of req.files) {
@@ -160,23 +201,12 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
     }
   }
 
-  const intentResponse = await openai.chat.completions.create({
-    model: 'gpt-4o',
-    messages: [
-      {
-        role: 'system',
-        content: 'The user was just asked if they want to submit a ticket. Determine if their response is a yes.',
-      },
-      { role: 'user', content: userMessage },
-    ],
-  });
-
-  const intent = intentResponse.choices?.[0]?.message?.content?.toLowerCase();
+  //Decision logic
   let botReply;
-
-  if (intent.includes('yes') || intent.includes('sure') || intent.includes('please') || intent.includes('yeah')) {
+  if (intent?.includes('yes') || intent?.includes('sure') || intent?.includes('please') || intent?.includes('yeah')) {
     try {
-      await submitFreshServiceTicket(chatHistory, uid, attachmentUrls);
+      //Use stored ticket preview to submit the actual ticket
+      await submitFreshServiceTicketFromPreview(ticketPreview, uid, attachmentUrls);
       botReply = '✅ Your help desk ticket has been submitted successfully.';
     } catch (error) {
       console.error('Error submitting ticket:', error);
@@ -191,10 +221,21 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
 });
 
 router.post('/chat/preview-ticket', async (req, res) => {
-  const { chatHistory, uid } = req.body;
+  const { chatHistory, uid, chatId } = req.body;
+
   try {
     const ticketDetails = await generateTicketDetailsFromHistory(chatHistory);
-    return res.json({ ticket: ticketDetails });
+
+    //safeChatId just in case if chat is null
+    const safeChatId = chatId || uuidv4();
+
+    //Save preview to Firestore
+    await db.collection('users').doc(uid)
+      .collection('ticketPreviews').doc(safeChatId)
+        .set({ ticketPreview: ticketDetails });
+
+    return res.json({ ticket: ticketDetails, chatId: safeChatId });
+
   } catch (error) {
     console.error('Error generating ticket preview:', error);
     return res.status(500).json({ error: 'Failed to generate ticket preview.' });
