@@ -11,6 +11,8 @@
   flex-shrink: 0;       /* ✅ Prevents shrinking */
   flex-grow: 0;         /* ✅ Prevents stretching */
   overflow: hidden;     /* ✅ Prevents width jumps */
+
+  transition: transform 0.3s ease-in-out; /* Animation */
 }
 
 .sidebar-header {
@@ -52,4 +54,42 @@
 .chat-list li.active {
   background-color: #cce0ff;
   font-weight: bold;
+}
+
+.hamburger-button {
+  display: none; /* Hidden by default */
+  height: 4.0rem;
+  margin-top: 0.8rem;
+
+}
+
+@media (max-width: 768px) {
+
+  .hamburger-button {
+    display: block; /* Displays now */
+    color: black;
+    background-color: transparent;
+  }
+
+  .sidebar {
+    display: none !important;
+    transform: translateX(-100%); /* Animation */
+  }
+
+  .sidebar-header button {
+    width: 4.5rem;
+  }
+
+  .sidebar.open {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 50%;
+    height: 100%;
+    background-color: white;
+    z-index: 1000;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(0); /* Animation */
+  }
 }

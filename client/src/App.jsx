@@ -22,6 +22,7 @@ function App() {
   const [chatId, setChatId] = useState(null);
   const [isTyping, setIsTyping] = useState(false);
   const [awaitingPreviewConfirmation, setAwaitingPreviewConfirmation] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // This useEffect runs once when the App component mounts. It sets up a real-time listener
   // (onAuthStateChanged) to track the user's authentication state. Firebase automatically calls
@@ -269,6 +270,8 @@ function App() {
                     setChat([]);
                     setChatId(null);
                   }}
+                  isMobileMenuOpen={isMobileMenuOpen}
+                  setIsMobileMenuOpen={setIsMobileMenuOpen}
                 />
                 <ChatLayout
                   chat={chat}
@@ -283,6 +286,8 @@ function App() {
                   setTicketPreview={setTicketPreview}
                   awaitingPreviewConfirmation={awaitingPreviewConfirmation}
                   setAwaitingPreviewConfirmation={setAwaitingPreviewConfirmation}
+                  isMobileMenuOpen={isMobileMenuOpen} 
+                  setIsMobileMenuOpen={setIsMobileMenuOpen}
                 />
               </div>
             ) : (

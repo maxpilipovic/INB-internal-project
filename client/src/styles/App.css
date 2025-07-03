@@ -300,3 +300,11 @@ button:hover {
   width: 100vw;
   overflow: hidden;
 }
+
+/* MEDIA QUERIES FOR MOBILE */
+@media (max-width: 768px) {
+  /* Apply styles for tablet and smaller */
+  .logout-button {
+    display: none; /* Hide logout button on mobile */
+  }
+}

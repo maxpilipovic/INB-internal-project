@@ -14,7 +14,9 @@ function ChatLayout({
   ticketPreview,
   setTicketPreview,
   awaitingPreviewConfirmation,
-  setAwaitingPreviewConfirmation
+  setAwaitingPreviewConfirmation,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen 
 }) {
   const [files, setFiles] = useState([]);
   const messageEndRef = useRef();
@@ -46,6 +48,13 @@ function ChatLayout({
 
   return (
     <div className="chat-container">
+      {/* Mobile Hamburger Button */}
+      <button 
+        className="hamburger-button"
+        onClick={() => setIsMobileMenuOpen(prev => !prev)}
+      >
+        ☰
+      </button>
       <h1>INB, N.A IT Support Chatbot</h1>
       <button className="logout-button" onClick={handleLogout}>Logout</button>
 

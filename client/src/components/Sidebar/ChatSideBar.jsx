@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../services/firebaseClient';
 import '../../styles/ChatSideBar.css';
 
-function ChatSidebar({ uid, onSelectChat, onNewChat, activeChatId }) {
+function ChatSidebar({ uid, onSelectChat, onNewChat, activeChatId, isMobileMenuOpen, setIsMobileMenuOpen }) {
   //STATES
   const [chats, setChats] = useState([]);
+  const sidebarRef = useRef(null);
 
   /**
   * useEffect to subscribe to Firestore chats for the logged-in user.
@@ -19,6 +20,7 @@ function ChatSidebar({ uid, onSelectChat, onNewChat, activeChatId }) {
   * - Returns an unsubscribe function to detach the listener when
   *   the component unmounts or when `uid` changes.
   */
+
   useEffect(() => {
     if (!uid) return;
 
@@ -38,13 +40,36 @@ function ChatSidebar({ uid, onSelectChat, onNewChat, activeChatId }) {
     return () => unsubscribe();
   }, [uid]);
 
+
+  const handleSelectChat = (chat) => {
+    onSelectChat(chat);
+    setIsMobileMenuOpen(false); //Close menu after selecting
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isMobileMenuOpen &&
+        sidebarRef.current &&
+        !sidebarRef.current.contains(event.target)
+      ) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMobileMenuOpen]);
+
   /**
   * Sidebar component JSX structure rendering the chat list UI.
   *
   * - The outer `<aside>` element uses the "sidebar" class for styling.
   *
   * - Header section (`sidebar-header`):
-  *   - Displays the title "💬 Chats" indicating the chat list.
+  *   - Displays the title " Chats" indicating the chat list.
   *   - Includes a "+ New" button that triggers the `onNewChat` callback 
   *     to create a new chat when clicked.
   *
@@ -61,9 +86,16 @@ function ChatSidebar({ uid, onSelectChat, onNewChat, activeChatId }) {
   * view and select existing chats or start a new chat.
   */
   return (
-    <aside className="sidebar">
+  <>
+
+    {/*Side Bar */}
+    <aside
+    ref={sidebarRef}
+    className={`sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
-        <h2>💬 Chats</h2>
+        <div className="sidebar-title">
+          <h2>💬 Chats</h2>
+        </div>
         <button onClick={onNewChat}>+ New</button>
       </div>
 
@@ -72,13 +104,14 @@ function ChatSidebar({ uid, onSelectChat, onNewChat, activeChatId }) {
           <li
             key={chat.id}
             className={activeChatId === chat.id ? 'active' : ''}
-            onClick={() => onSelectChat(chat)}
+            onClick={() => handleSelectChat(chat)}
           >
             <span>{chat.title || 'Untitled Chat'}</span>
           </li>
         ))}
       </ul>
     </aside>
+  </>
   );
 }
 
