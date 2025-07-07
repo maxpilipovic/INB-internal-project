@@ -199,7 +199,7 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
         expires: '03-01-2030',
       });
       attachmentUrls.push({
-        label: `file${i + 1}`,
+        label: `File${i + 1}`,
         url: url
       });
     }

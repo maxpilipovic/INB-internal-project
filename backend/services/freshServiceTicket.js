@@ -72,7 +72,7 @@ export async function submitFreshServiceTicket(history, uid, attachmentUrls = []
 
     // Combine URLs into the description if any
     const descriptionWithLinks = attachmentUrls.length
-      ? `${ticketDetails.description}\n\nAttached files:\n${attachmentUrls.map((url, i) => `File ${i + 1}: ${url}`).join('\n')}`
+      ? `${ticketDetails.description}\n\nAttached files:\n${attachmentUrls.map(f => `${f.label}: ${f.url}`).join('\n')}`
       : ticketDetails.description;
 
     // No attachments — regular JSON payload
