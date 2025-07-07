@@ -109,7 +109,7 @@
   font-weight: 700; /*Font weight for header*/
   font-size: 1.5rem; /*Font size for header (1.5rem from root)*/
   padding: 16px 24px; /*Padding for header*/
-  
+  line-height: 2;
 }
 
 .chat-box {

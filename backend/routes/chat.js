@@ -197,7 +197,10 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
         action: 'read',
         expires: '03-01-2030',
       });
-      attachmentUrls.push(url);
+      attachmentUrls.push({
+        label: `file${i + 1}`,
+        url: url
+      });
     }
   }
 
