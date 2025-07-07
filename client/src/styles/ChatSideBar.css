@@ -8,9 +8,9 @@
   flex-direction: column;
 
   
-  flex-shrink: 0;       /* ✅ Prevents shrinking */
-  flex-grow: 0;         /* ✅ Prevents stretching */
-  overflow: hidden;     /* ✅ Prevents width jumps */
+  flex-shrink: 0;       /* Prevents shrinking */
+  flex-grow: 0;         /* Prevents stretching */
+  overflow: hidden;     /* Prevents width jumps */
 
   transition: transform 0.3s ease-in-out; /* Animation */
 }

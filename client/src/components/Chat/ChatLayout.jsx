@@ -49,14 +49,18 @@ function ChatLayout({
   return (
     <div className="chat-container">
       {/* Mobile Hamburger Button */}
-      <button 
-        className="hamburger-button"
-        onClick={() => setIsMobileMenuOpen(prev => !prev)}
-      >
-        ☰
-      </button>
-      <h1>INB, N.A IT Support Chatbot</h1>
+      <div className="alpha-container">
+        <button 
+          className="hamburger-button"
+          onClick={() => setIsMobileMenuOpen(prev => !prev)}
+        >
+          ☰
+        </button>
+        <h1>INB, N.A IT Support Chatbot</h1>
+
+        {/* Logout Button */}
       <button className="logout-button" onClick={handleLogout}>Logout</button>
+      </div>
 
       <div className="chat-box">
         {chat.map((msg, i) => (

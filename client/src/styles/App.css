@@ -35,19 +35,14 @@
 
 /* LOG OUT BUTTON */
 .logout-button {
-  position: absolute;
-  top: 28px;
-  right: 24px;
-  background-color: #dc3545; /* Red */
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  font-size: 1rem;
+  background-color: red;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  
+  padding: 8px 16px;
+  margin-top: 25px;
+  margin-bottom: 30px;
+  margin-left: auto;
+  margin-right: 16px;
 }
 
 .logout-button:hover {
@@ -103,7 +98,6 @@
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.1); /*Provides shadow (NO SHADOW RN BECAUSE FLEX-GROW ENTIRE PAGE*/
   display: flex; /*Flexbox for entire page*/
   flex-direction: column; /*Column for entire page*/
-  height: 100vh; /*Height of entire page*/
   width: auto; /* Uses remaining space */
   flex-grow: 1; /* Grow with remaining space */
   min-width: 0; /* Allow shrinking inside of flex */
@@ -115,9 +109,7 @@
   font-weight: 700; /*Font weight for header*/
   font-size: 1.5rem; /*Font size for header (1.5rem from root)*/
   padding: 16px 24px; /*Padding for header*/
-  color: #222; /*Black Color for header text*/
-  border-bottom: 1px solid #ddd;
-  background: white;
+  
 }
 
 .chat-box {
@@ -301,10 +293,22 @@ button:hover {
   overflow: hidden;
 }
 
+/* ALPHA CONTAINER */
+.alpha-container {
+  display: flex;
+  flex-wrap: nowrap;
+  color: #222; /*Black Color for header text*/
+  border-bottom: 1px solid #ddd;
+  background: white;
+}
+  
+
 /* MEDIA QUERIES FOR MOBILE */
 @media (max-width: 768px) {
   /* Apply styles for tablet and smaller */
-  .logout-button {
-    display: none; /* Hide logout button on mobile */
+
+  .chat-container h1 {
+    font-size: 1.2rem;
+    line-height: 1.6;
   }
 }
