@@ -186,7 +186,8 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
   //Handle attachments
   const attachmentUrls = [];
   if (req.files?.length) {
-    for (const file of req.files) {
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
       const fileName = `attachments/${uuidv4()}-${file.originalname}`;
       const fileRef = bucket.file(fileName);
       await fileRef.save(file.buffer, {
