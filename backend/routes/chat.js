@@ -20,9 +20,95 @@ router.post('/chat', async (req, res) => {
   const sanitizeMessage = sanitizeInput(userMessage);
 
   //CHECKING TICKET STUFF FIRST
+  //USER ASKS "LETS SEE TICKET"
+  if (/show.*ticket|preview.*ticket|what.*ticket.*say|let.*see.*ticket/i.test(sanitizeMessage)) {
+    try {
+      const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(chatId);
+      const previewDoc = await previewRef.get();
 
+      if (!previewDoc.exists) {
+        const reply = `⚠️ I couldn’t find a ticket preview to show. Please generate one first.`;
+        const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+        return res.json({ reply, chatId: newChatId || chatId });
+      }
 
-  // Ticket activity
+      const { subject, description, priority } = previewDoc.data().ticketPreview;
+
+      const priorityMap = {
+        1: 'Low',
+        2: 'Medium',
+        3: 'High',
+        4: 'Urgent',
+        'Low': 'Low',
+        'Medium': 'Medium',
+        'High': 'High',
+        'Urgent': 'Urgent',
+      };
+
+      const priorityLabel = priorityMap[priority] || 'Not set';
+      const reply = `🎟️ Ticket Preview\n\n**Subject:** ${subject}\n**Description:** ${description}\n**Priority:** ${priorityLabel}`;
+
+      const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+      return res.json({ reply, chatId: newChatId || chatId });
+
+    } catch (error) {
+      console.error('Error fetching ticket preview:', error);
+      const reply = `⚠️ Something went wrong while fetching the ticket preview.`;
+      const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+      return res.json({ reply, chatId: newChatId || chatId });
+    }
+  }
+
+  //Checking for priority change
+  let detectedPriority = null;
+
+  try {
+    const priorityIntentResponse = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+        role: 'system',
+        content: `You are a helpful assistant. Based on the user's message, determine if they are trying to set or change the priority of a help desk ticket. If so, respond ONLY with one of these exact values: "Low", "Medium", "High", "Urgent". If the message is not related to priority, respond with "None".`,
+      },
+      { role: 'user', content: sanitizeMessage },
+    ],
+  });
+
+  const responseText = priorityIntentResponse.choices?.[0]?.message?.content?.trim();
+  if (['Low', 'Medium', 'High', 'Urgent'].includes(responseText)) {
+    detectedPriority = responseText;
+  }
+
+  } catch (err) {
+    console.error('Error detecting priority via GPT:', err);
+  }
+
+  if (detectedPriority) {
+    try {
+      const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(chatId);
+      const previewDoc = await previewRef.get();
+
+      if (!previewDoc.exists) {
+        const reply = '⚠️ I couldn’t find a ticket preview to update. Please preview the ticket first.';
+        const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+        return res.json({ reply, chatId: newChatId || chatId });
+      }
+
+      await previewRef.update({ 'ticketPreview.priority': detectedPriority });
+
+      const reply = `✅ Got it. I’ve updated your ticket priority to **${detectedPriority}**.`;
+      const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+      return res.json({ reply, chatId: newChatId || chatId });
+
+    } catch (err) {
+      console.error('Error updating Firestore ticket priority:', err);
+      const reply = '❌ There was an issue updating the ticket priority.';
+      const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+      return res.json({ reply, chatId: newChatId || chatId });
+    }
+  }
+
+  //Ticket activity
   const activityMatch = sanitizeMessage.match(/(?:conversations?|updates?|history|activity).*ticket\s*#?(\d{3,})/i);
   if (activityMatch) {
     const ticketId = activityMatch[1];
@@ -173,7 +259,7 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
       messages: [
         {
           role: 'system',
-          content: 'The user was just asked if they want to submit a ticket. Determine if their response is a yes.',
+          content: 'The user was previously shown a ticket preview. Based on their reply below, determine if they want to submit the ticket. Answer only "yes" or "no".',
         },
         { role: 'user', content: userMessage },
       ],
@@ -207,7 +293,7 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
 
   //Decision logic
   let botReply;
-  if (intent?.includes('yes') || intent?.includes('sure') || intent?.includes('please') || intent?.includes('yeah')) {
+  if (intent && /yes|sure|please|yeah|submit|go ahead/i.test(intent)) {
     try {
       //Use stored ticket preview to submit the actual ticket
       await submitFreshServiceTicketFromPreview(ticketPreview, uid, attachmentUrls);
@@ -226,18 +312,23 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
 
 router.post('/chat/preview-ticket', async (req, res) => {
   const { chatHistory, uid, chatId } = req.body;
+  const safeChatId = chatId || uuidv4();
+
+
+  //Check if a preview already exists
+  const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(safeChatId);
+  const previewDoc = await previewRef.get();
+
+  if (previewDoc.exists) {
+    //Return existing preview as-is, don't regenerate
+    return res.json({ ticket: previewDoc.data().ticketPreview, chatId: safeChatId });
+  }
 
   try {
     const ticketDetails = await generateTicketDetailsFromHistory(chatHistory);
 
-    //safeChatId just in case if chat is null
-    const safeChatId = chatId || uuidv4();
-
     //Save preview to Firestore
-    await db.collection('users').doc(uid)
-      .collection('ticketPreviews').doc(safeChatId)
-        .set({ ticketPreview: ticketDetails });
-
+    await previewRef.set({ ticketPreview: ticketDetails });
     return res.json({ ticket: ticketDetails, chatId: safeChatId });
 
   } catch (error) {

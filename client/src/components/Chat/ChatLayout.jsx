@@ -97,7 +97,16 @@ function ChatLayout({
             <h3>🎟️ Ticket Preview</h3>
             <p><strong>Subject:</strong> {ticketPreview.subject}</p>
             <p><strong>Description:</strong> {ticketPreview.description}</p>
-            <p><strong>Priority:</strong> {['Low', 'Medium', 'High', 'Urgent'][ticketPreview.priority - 1]}</p>
+            <p><strong>Priority:</strong> {({
+              1: 'Low',
+              2: 'Medium',
+              3: 'High',
+              4: 'Urgent',
+              'Low': 'Low',
+              'Medium': 'Medium',
+              'High': 'High',
+              'Urgent': 'Urgent'
+            })[ticketPreview.priority] || 'Not set'}</p>
             <div className="button-group2">
               <button onClick={() => {
                 handleTicketConfirmation("submit ticket", files, () => {
