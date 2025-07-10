@@ -11,23 +11,165 @@ import { sanitizeInput } from '../utils/sanitizeInput.js';
 import { submitFreshServiceTicketFromPreview } from '../services/freshServiceTicket.js';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { cleanGptOutput } from '../utils/cleanGptOutput.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
+
+// Intent detection function using OpenAI
+async function detectIntent(message) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an intent classification assistant for a help desk system. 
+          
+          Analyze the user's message and determine their intent. You must respond with ONLY a valid JSON object, no markdown formatting, no code blocks, just pure JSON:
+          
+          {
+            "intent": "intent_name",
+            "confidence": 0.95,
+            "extracted_data": {}
+          }
+          
+          Available intents:
+          - "update_description": User wants to modify/rewrite/change/improve the ticket description
+          - "update_subject": User wants to modify/rewrite/change/improve the ticket subject  
+          - "show_ticket": User wants to see/preview/view the current ticket
+          - "update_priority": User wants to change ticket priority (extract priority level)
+          - "ticket_activity": User wants to see conversations/updates/history for a specific ticket (extract ticket ID)
+          - "ticket_status": User wants to check status of a specific ticket (extract ticket ID)
+          - "list_tickets": User wants to see their tickets/check ticket status generally
+          - "create_ticket": User wants to create a new help desk ticket
+          - "general_help": User needs general IT help/support
+          - "other": None of the above intents apply
+          
+          For priority updates, extract priority as: "Low", "Medium", "High", or "Urgent"
+          For ticket queries, extract ticket ID (3+ digit number) if mentioned
+          
+          IMPORTANT: Return only the JSON object, no explanation, no markdown, no code blocks.`
+        },
+        { role: 'user', content: message }
+      ],
+      temperature: 0.1
+    });
+
+    let result = response.choices?.[0]?.message?.content?.trim();
+    
+    // Clean up the response in case it contains markdown code blocks
+    if (result.includes('```json')) {
+      result = result.replace(/```json\s*/, '').replace(/```\s*$/, '');
+    } else if (result.includes('```')) {
+      result = result.replace(/```\s*/, '').replace(/```\s*$/, '');
+    }
+    
+    // Remove any leading/trailing whitespace
+    result = result.trim();
+    
+    return JSON.parse(result);
+  } catch (error) {
+    console.error('Error detecting intent:', error);
+    console.error('Raw response:', response?.choices?.[0]?.message?.content);
+    return { intent: 'other', confidence: 0.5, extracted_data: {} };
+  }
+}
 
 router.post('/chat', async (req, res) => {
   const { message: userMessage, uid, chatId } = req.body;
   const sanitizeMessage = sanitizeInput(userMessage);
 
-  //CHECKING TICKET STUFF FIRST
-  //USER ASKS "LETS SEE TICKET"
-  if (/show.*ticket|preview.*ticket|what.*ticket.*say|let.*see.*ticket/i.test(sanitizeMessage)) {
+  // Detect user intent using OpenAI
+  const intentResult = await detectIntent(sanitizeMessage);
+  const { intent, extracted_data } = intentResult;
+
+  console.log('Detected intent:', intent, 'Data:', extracted_data);
+
+  // Handle ticket description updates
+  if (intent === 'update_description') {
+    const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(chatId);
+    const previewDoc = await previewRef.get();
+    const preview = previewDoc.data()?.ticketPreview;
+
+    if (!preview) {
+      const reply = `⚠️ No ticket preview found to update. Please generate one first.`;
+      const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+      return res.json({ reply, chatId: newChatId || chatId });
+    }
+
+    const chatDoc = await db.collection('users').doc(uid).collection('chats').doc(chatId).get();
+    const chatData = chatDoc.data();
+    const chatHistoryFormatted = chatData?.messages?.map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text
+    })) || [];
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: `You are an IT assistant rewriting a helpdesk ticket description.` },
+        ...chatHistoryFormatted,
+        { role: 'user', content: `Please rewrite ONLY the ticket description clearly and professionally. Respond with just the revised description text — no extra commentary, no greetings, no labels, no markdown formatting.` }
+      ]
+    });
+
+    let newValue = completion.choices?.[0]?.message?.content?.trim() || '';
+    console.log(newValue);
+    newValue = cleanGptOutput(newValue);
+    console.log(newValue);
+
+    await previewRef.update({ [`ticketPreview.description`]: newValue });
+    const reply = `✅ I've updated the ticket description to:\n\n${newValue}`;
+    const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+    return res.json({ reply, chatId: newChatId || chatId });
+  }
+
+  // Handle ticket subject updates
+  if (intent === 'update_subject') {
+    const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(chatId);
+    const previewDoc = await previewRef.get();
+    const preview = previewDoc.data()?.ticketPreview;
+
+    if (!preview) {
+      const reply = `⚠️ No ticket preview found to update. Please generate one first.`;
+      const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+      return res.json({ reply, chatId: newChatId || chatId });
+    }
+
+    const chatDoc = await db.collection('users').doc(uid).collection('chats').doc(chatId).get();
+    const chatData = chatDoc.data();
+    const chatHistoryFormatted = chatData?.messages?.map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'assistant',
+      content: msg.text
+    })) || [];
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        { role: 'system', content: `You are an IT assistant rewriting a helpdesk ticket subject.` },
+        ...chatHistoryFormatted,
+        { role: 'user', content: `Please rewrite the subject of this ticket to be clearer and more professional.` }
+      ]
+    });
+
+    let newValue = completion.choices?.[0]?.message?.content?.trim() || '';
+    newValue = cleanGptOutput(newValue);
+
+    await previewRef.update({ [`ticketPreview.subject`]: newValue });
+    const reply = `✅ I've updated the ticket subject to:\n\n${newValue}`;
+    const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+    return res.json({ reply, chatId: newChatId || chatId });
+  }
+
+  // Handle show ticket requests
+  if (intent === 'show_ticket') {
     try {
       const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(chatId);
       const previewDoc = await previewRef.get();
 
       if (!previewDoc.exists) {
-        const reply = `⚠️ I couldn’t find a ticket preview to show. Please generate one first.`;
+        const reply = `⚠️ I couldn't find a ticket preview to show. Please generate one first.`;
         const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
         return res.json({ reply, chatId: newChatId || chatId });
       }
@@ -59,44 +201,23 @@ router.post('/chat', async (req, res) => {
     }
   }
 
-  //Checking for priority change
-  let detectedPriority = null;
-
-  try {
-    const priorityIntentResponse = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-        role: 'system',
-        content: `You are a helpful assistant. Based on the user's message, determine if they are trying to set or change the priority of a help desk ticket. If so, respond ONLY with one of these exact values: "Low", "Medium", "High", "Urgent". If the message is not related to priority, respond with "None".`,
-      },
-      { role: 'user', content: sanitizeMessage },
-    ],
-  });
-
-  const responseText = priorityIntentResponse.choices?.[0]?.message?.content?.trim();
-  if (['Low', 'Medium', 'High', 'Urgent'].includes(responseText)) {
-    detectedPriority = responseText;
-  }
-
-  } catch (err) {
-    console.error('Error detecting priority via GPT:', err);
-  }
-
-  if (detectedPriority) {
+  // Handle priority updates
+  if (intent === 'update_priority' && extracted_data.priority) {
+    const detectedPriority = extracted_data.priority;
+    
     try {
       const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(chatId);
       const previewDoc = await previewRef.get();
 
       if (!previewDoc.exists) {
-        const reply = '⚠️ I couldn’t find a ticket preview to update. Please preview the ticket first.';
+        const reply = '⚠️ I couldn\'t find a ticket preview to update. Please preview the ticket first.';
         const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
         return res.json({ reply, chatId: newChatId || chatId });
       }
 
       await previewRef.update({ 'ticketPreview.priority': detectedPriority });
 
-      const reply = `✅ Got it. I’ve updated your ticket priority to **${detectedPriority}**.`;
+      const reply = `✅ Got it. I've updated your ticket priority to **${detectedPriority}**.`;
       const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
       return res.json({ reply, chatId: newChatId || chatId });
 
@@ -108,10 +229,9 @@ router.post('/chat', async (req, res) => {
     }
   }
 
-  //Ticket activity
-  const activityMatch = sanitizeMessage.match(/(?:conversations?|updates?|history|activity).*ticket\s*#?(\d{3,})/i);
-  if (activityMatch) {
-    const ticketId = activityMatch[1];
+  // Handle ticket activity requests
+  if (intent === 'ticket_activity' && extracted_data.ticket_id) {
+    const ticketId = extracted_data.ticket_id;
     try {
       const conversations = await getTicketConversations(ticketId);
       const reply = conversations.length
@@ -131,10 +251,9 @@ router.post('/chat', async (req, res) => {
     }
   }
 
-  // Ticket status
-  const ticketIdMatch = sanitizeMessage.match(/(?:ticket\s*#?|#)(\d{3,})/i);
-  if (ticketIdMatch) {
-    const ticketId = ticketIdMatch[1];
+  // Handle ticket status requests
+  if (intent === 'ticket_status' && extracted_data.ticket_id) {
+    const ticketId = extracted_data.ticket_id;
     try {
       const ticket = await getFreshServiceTicketById(ticketId);
       const statusMap = {
@@ -151,8 +270,8 @@ router.post('/chat', async (req, res) => {
     }
   }
 
-  // List tickets
-  if (/list.*tickets|show.*tickets|my.*tickets|view.*tickets|status.*ticket|update.*ticket|how.*ticket.*doing|check.*ticket/i.test(sanitizeMessage)) {
+  // Handle list tickets requests
+  if (intent === 'list_tickets') {
     try {
       const userDoc = await db.collection('users').doc(uid).get();
       if (!userDoc.exists) throw new Error('User not found in db');
@@ -179,57 +298,66 @@ router.post('/chat', async (req, res) => {
     }
   }
 
-  // GPT + KB fallback
-  const kbArticles = await fetchFreshServiceArticles(sanitizeMessage);
-  const kbText = kbArticles.map(article => `- ${article.title}: ${article.content}`).join('\n');
+  // Handle general help and ticket creation
+  if (intent === 'general_help' || intent === 'create_ticket' || intent === 'other') {
+    // GPT + KB fallback
+    const kbArticles = await fetchFreshServiceArticles(sanitizeMessage);
+    const kbText = kbArticles.map(article => `- ${article.title}: ${article.content}`).join('\n');
 
-  const gptMessages = [
-    {
-      role: 'system',
-      content:  `You are an internal IT Help Desk assistant for INB.
-                Use the following FreshService knowledge base to help the user:\n\n${kbText || 'No articles found.'}
-                If the user seems to want help beyond knowledge base, gently ask if they’d like to open a help desk ticket.`,
-    },
-    {
-      role: 'user',
-      content: sanitizeMessage,
-    },
-  ];
+    const gptMessages = [
+      {
+        role: 'system',
+        content: `You are an internal IT Help Desk assistant for INB.
+                  Use the following FreshService knowledge base to help the user:\n\n${kbText || 'No articles found.'}
+                  If the user seems to want help beyond knowledge base, gently ask if they'd like to open a help desk ticket.`,
+      },
+      {
+        role: 'user',
+        content: sanitizeMessage,
+      },
+    ];
 
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: gptMessages,
-    });
+    try {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: gptMessages,
+      });
 
-    const botReply = completion.choices?.[0]?.message?.content?.trim();
-    const newChatId = await logChat(uid, sanitizeMessage, botReply, chatId);
+      const botReply = completion.choices?.[0]?.message?.content?.trim();
+      const newChatId = await logChat(uid, sanitizeMessage, botReply, chatId);
 
-    const intentCheck = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: 'Based on the user message below, does the user want to create a help desk ticket? Answer only "yes" or "no".',
-        },
-        { role: 'user', content: sanitizeMessage },
-      ],
-    });
+      // Check if user wants to create a ticket
+      const intentCheck = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: 'Based on the user message below, does the user want to create a help desk ticket? Answer only "yes" or "no".',
+          },
+          { role: 'user', content: sanitizeMessage },
+        ],
+      });
 
-    const intentResponse = intentCheck.choices?.[0]?.message?.content?.trim().toLowerCase();
-    const wantsPreview = ['yes', 'yes.'].includes(intentResponse);
+      const intentResponse = intentCheck.choices?.[0]?.message?.content?.trim().toLowerCase();
+      const wantsPreview = ['yes', 'yes.'].includes(intentResponse);
 
-    return res.json({
-      reply: botReply || 'GPT is currently unavailable.',
-      awaitingTicketPreview: wantsPreview,
-      chatId: newChatId || chatId,
-    });
-  } catch (err) {
-    console.error('OPENAI Error', err);
-    const botReply = 'GPT is currently unavailable.';
-    const newChatId = await logChat(uid, sanitizeMessage, botReply, chatId);
-    return res.json({ reply: botReply, chatId: newChatId || chatId });
+      return res.json({
+        reply: botReply || 'GPT is currently unavailable.',
+        awaitingTicketPreview: wantsPreview,
+        chatId: newChatId || chatId,
+      });
+    } catch (err) {
+      console.error('OPENAI Error', err);
+      const botReply = 'GPT is currently unavailable.';
+      const newChatId = await logChat(uid, sanitizeMessage, botReply, chatId);
+      return res.json({ reply: botReply, chatId: newChatId || chatId });
+    }
   }
+
+  // Fallback for unhandled intents
+  const reply = "I'm not sure how to help with that. Could you please rephrase your request?";
+  const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+  return res.json({ reply, chatId: newChatId || chatId });
 });
 
 router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, res) => {
@@ -291,19 +419,52 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
     }
   }
 
-  //Decision logic
+  //Decision logic - Use OpenAI for better intent detection
   let botReply;
-  if (intent && /yes|sure|please|yeah|submit|go ahead/i.test(intent)) {
-    try {
+  try {
+    const confirmationResponse = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `The user was shown a ticket preview and asked if they want to submit it. 
+          Based on their response, determine if they want to:
+          1. "submit" - Submit the ticket
+          2. "cancel" - Cancel/don't submit the ticket
+          3. "unclear" - Response is unclear
+          
+          Respond with only one word: "submit", "cancel", or "unclear"`
+        },
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.1
+    });
+
+    const decision = confirmationResponse.choices?.[0]?.message?.content?.trim().toLowerCase();
+    
+    if (decision === 'submit') {
       //Use stored ticket preview to submit the actual ticket
       await submitFreshServiceTicketFromPreview(ticketPreview, uid, attachmentUrls);
       botReply = '✅ Your help desk ticket has been submitted successfully.';
-    } catch (error) {
-      console.error('Error submitting ticket:', error);
-      botReply = 'Sorry, there was an issue submitting your ticket.';
+    } else if (decision === 'cancel') {
+      botReply = 'Okay, no ticket has been created. Let me know if you need anything else.';
+    } else {
+      botReply = 'I\'m not sure if you want to submit the ticket or not. Please let me know if you\'d like to submit it or cancel.';
     }
-  } else {
-    botReply = 'Okay, no ticket has been created. Let me know if you need anything else.';
+  } catch (error) {
+    console.error('Error determining confirmation intent:', error);
+    // Fallback to simple logic
+    if (intent && /yes|sure|please|yeah|submit|go ahead/i.test(intent)) {
+      try {
+        await submitFreshServiceTicketFromPreview(ticketPreview, uid, attachmentUrls);
+        botReply = '✅ Your help desk ticket has been submitted successfully.';
+      } catch (error) {
+        console.error('Error submitting ticket:', error);
+        botReply = 'Sorry, there was an issue submitting your ticket.';
+      }
+    } else {
+      botReply = 'Okay, no ticket has been created. Let me know if you need anything else.';
+    }
   }
 
   const newChatId = await logChat(uid, userMessage, botReply, chatId);
@@ -313,7 +474,6 @@ router.post('/chat/confirm-ticket', upload.array('attachments', 5), async (req, 
 router.post('/chat/preview-ticket', async (req, res) => {
   const { chatHistory, uid, chatId } = req.body;
   const safeChatId = chatId || uuidv4();
-
 
   //Check if a preview already exists
   const previewRef = db.collection('users').doc(uid).collection('ticketPreviews').doc(safeChatId);
