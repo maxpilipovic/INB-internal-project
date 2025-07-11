@@ -12,6 +12,7 @@ import { submitFreshServiceTicketFromPreview } from '../services/freshServiceTic
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
 import { cleanGptOutput } from '../utils/cleanGptOutput.js';
+import { getAgentAssigned } from '../services/getAgentAssigned.js';
 
 const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
@@ -41,6 +42,7 @@ async function detectIntent(message) {
           - "update_priority": User wants to change ticket priority (extract priority level)
           - "ticket_activity": User wants to see conversations/updates/history for a specific ticket (extract ticket ID)
           - "ticket_status": User wants to check status of a specific ticket (extract ticket ID)
+          - "tick_agent": User wants to see who is assigned to a specific ticket (extract ticket ID)
           - "list_tickets": User wants to see their tickets/check ticket status generally
           - "create_ticket": User wants to create a new help desk ticket
           - "general_help": User needs general IT help/support
@@ -48,6 +50,14 @@ async function detectIntent(message) {
           
           For priority updates, extract priority as: "Low", "Medium", "High", or "Urgent"
           For ticket queries, extract ticket ID (3+ digit number) if mentioned
+
+          Examples of "tick_agent" intent:
+          - "Who is assigned to ticket 82344"
+          - "What agent is assigned to ticket 82344"
+          - "Who is working on ticket 82344"
+          - "Which agent has ticket 82344"
+          - "Who's handling ticket 82344"
+          - "What's the assignee for ticket 82344"
           
           IMPORTANT: Return only the JSON object, no explanation, no markdown, no code blocks.`
         },
@@ -246,6 +256,28 @@ router.post('/chat', async (req, res) => {
       return res.json({ reply, chatId: newChatId || chatId });
     } catch {
       const reply = `Sorry, I couldn't fetch conversations for ticket #${ticketId}.`;
+      const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+      return res.json({ reply, chatId: newChatId || chatId });
+    }
+  }
+
+  if (intent === 'tick_agent' && extracted_data.ticket_id) {
+    const ticketId = extracted_data.ticket_id;
+    try {
+      const ticket = await getFreshServiceTicketById(ticketId);
+      const responderId = ticket.responder_id;
+      if (!responderId) {
+        const reply = `No agent is currently assigned to ticket #${ticketId}.`;
+        const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
+        return res.json({ reply, chatId: newChatId || chatId });
+      }
+
+      const agent = await getAgentAssigned(responderId);
+      const reply2 = `👤 Ticket #${ticketId} is currently assigned to agent **${agent.agent.first_name + " " + agent.agent.last_name}** (${agent.agent.email}).`;
+      const newChatId = await logChat(uid, sanitizeMessage, reply2, chatId);
+      return res.json({ reply: reply2, chatId: newChatId || chatId });
+    } catch (error) {
+      const reply = `Sorry, I couldn't fetch the agent assigned to ticket #${ticketId}.`;
       const newChatId = await logChat(uid, sanitizeMessage, reply, chatId);
       return res.json({ reply, chatId: newChatId || chatId });
     }
