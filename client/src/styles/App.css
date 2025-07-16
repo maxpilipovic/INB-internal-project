@@ -9,6 +9,18 @@
 
 /* CONFIRMATION BUTTONS */
 
+/* WATERMARK */
+.chat-watermark {
+  position: absolute;
+  top: 45%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.05;
+  width: 300px;
+  pointer-events: none;
+  z-index: 0;
+}
+
 /* PREVIEW SHIT */
 .ticket-confirmation-box {
   display: flex;

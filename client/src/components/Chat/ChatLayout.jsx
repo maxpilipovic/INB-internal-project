@@ -63,6 +63,7 @@ function ChatLayout({
       </div>
 
       <div className="chat-box">
+        <img src="/INBlogo-7547.png" className="chat-watermark" alt="Watermark" />
         {chat.map((msg, i) => (
           <MessageBubble
             key={i}
