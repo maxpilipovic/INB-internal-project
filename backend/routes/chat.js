@@ -83,6 +83,7 @@ async function detectIntent(message) {
     console.error('Error detecting intent:', error);
     console.error('Raw response:', response?.choices?.[0]?.message?.content);
     return { intent: 'other', confidence: 0.5, extracted_data: {} };
+    console.log("Error from OpenAI intent detection:", error);
   }
 }
 
