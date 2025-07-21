@@ -1,26 +1,14 @@
-<<<<<<< HEAD
 # 🧠 INB IT Chatbot — Smart Helpdesk Assistant
 
 This is a smart helpdesk chatbot web app built for INB that helps users describe technical issues and automatically drafts support tickets using AI (GPT). Built with **React**, **Firebase**, and **Node.js**, it offers a clean, responsive UI and powerful features for internal support at INB.
-=======
-# 🧠 IT Chatbot — Smart Helpdesk Assistant
-
-This is a smart helpdesk chatbot web app that helps users describe technical issues and automatically drafts support tickets using AI (GPT). Built with **React**, **Firebase**, and **Node.js**, it offers a clean, responsive UI and powerful features for internal support at INB..
->>>>>>> 65fa5074e1fca29f90422954e7097d89dff497a0
 
 ---
 
 ## 📸 Screenshots
 
-<<<<<<< HEAD
 | Login Page         | Chatbot Page       |
 |--------------------|--------------------|
 | ![Login](/client/public/loginpage.png) | ![Chatbot](/client/public/chatpage.png) |
-=======
-| Login Page | Chatbot Page |
-|------------|--------------|
-COMING SOON
->>>>>>> 65fa5074e1fca29f90422954e7097d89dff497a0
 
 ---
 
@@ -46,11 +34,7 @@ COMING SOON
 
 ### 🤖 Chatbot Page
 
-<<<<<<< HEAD
 - GPT-powered assistant trained on a custom knowledgebase to help with IT-related queries
-=======
-- GPT-powered assistant trained to help with IT-related queries
->>>>>>> 65fa5074e1fca29f90422954e7097d89dff497a0
 - Firestore-backed real-time chat history
 - Each message stored with user ID, timestamp, and session ID
 - Automatic support ticket generation:
@@ -70,8 +54,4 @@ COMING SOON
   - CRUD operations for tickets (intelligently created based on conversation)
   - Preview Tickets (Edit/Update)
   - View conversations & agents assigned to tickets (email or id)
-<<<<<<< HEAD
   - Intelligent responses based on custom knowledgebase
-=======
-  - Intelligent responses based on custom knowledgebase
->>>>>>> 65fa5074e1fca29f90422954e7097d89dff497a0
