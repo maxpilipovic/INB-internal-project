@@ -19,7 +19,7 @@ This is a smart helpdesk chatbot web app built for INB that helps users describe
 - **Authentication:** Firebase Auth (Email/Password + Google)
 - **Database:** Firestore (for chat history, tickets, user profiles)
 - **AI Integration:** OpenAI GPT (via secure Node backend)
-- **Hosting:** Firebase Hosting
+- **Hosting:** Firebase Hosting & Render
 
 ---
 
