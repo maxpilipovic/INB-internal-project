@@ -54,23 +54,6 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  
-  /**
-  * Handles sending a user message to the chatbot and receiving the bot’s response.
-  *
-  * 1. Validates that the user is logged in and the input is not empty.
-  * 2. Immediately appends the user’s message to the chat UI (`setChat`), providing a responsive experience.
-  * 3. Sends the message to the backend API (`/api/chat`) with:
-  *    - `message`: the text the user typed
-  *    - `uid`: Firebase user ID for associating the chat
-  *    - `chatId`: used to continue an existing chat session
-  * 4. Awaits the bot's response and appends it to the chat.
-  *    - If `data.awaitingTicketConfirmation` is true, the UI will show buttons for confirmation.
-  *    - If a new `chatId` is returned, it updates state so the sidebar reflects the saved thread.
-  * 5. Handles network or server errors gracefully by showing a fallback bot error message.
-  * 6. Clears the input field and disables the typing indicator (`isTyping`) once complete.
-  */
-
   const sendMessage = async () => {
 
     if (!input.trim() || !user?.uid) {
@@ -83,7 +66,7 @@ function App() {
     setIsTyping(true);
 
     try {
-      const res = await fetch(`${backendURL2}/api/chat`, {
+      const res = await fetch(`${backendURL1}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input, uid: user.uid, chatId }),
@@ -151,7 +134,7 @@ function App() {
         formData.append('attachments', file);
       });
 
-      const res = await fetch(`${backendURL2}/api/chat/confirm-ticket`, {
+      const res = await fetch(`${backendURL1}/api/chat/confirm-ticket`, {
         method: 'POST',
         body: formData,
       });
@@ -191,7 +174,7 @@ function App() {
 
   const handleTicketPreview = async () => {
     try {
-      const res = await fetch(`${backendURL2}/api/chat/preview-ticket`, {
+      const res = await fetch(`${backendURL1}/api/chat/preview-ticket`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -253,7 +236,7 @@ function App() {
                   activeChatId={chatId}
                   onSelectChat={async (chatDoc) => {
                     try {
-                      const res = await fetch(`${backendURL2}/api/get-chat/${chatDoc.id}?uid=${user.uid}`);
+                      const res = await fetch(`${backendURL1}/api/get-chat/${chatDoc.id}?uid=${user.uid}`);
                       const data = await res.json();
                       setChat(data.messages || []);
                       setChatId(chatDoc.id);

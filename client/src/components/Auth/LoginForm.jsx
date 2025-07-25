@@ -90,7 +90,7 @@ function LoginForm({ onLogin }) {
         navigate('/'); //Forces redirect to main app
 
         //Send to backend
-        fetch(`${backendURL2}/api/auth`, {
+        fetch(`${backendURL1}/api/auth`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
